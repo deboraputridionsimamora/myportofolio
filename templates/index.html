@@ -6,24 +6,27 @@
     <title>Debora - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Sacramento&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <header class="site-header">
         <div class="container">
-            <a href="#profile" class="brand">Debora</a>
+            <a href="#profile" class="brand">Debora Putri Dion Simamora</a>
             <nav>
                 <a href="#profile">Profile</a>
+                <a href="#about">About</a>
+                <a href="#experience">Experience</a>
             </nav>
         </div>
     </header>
 
     <main>
         <section class="hero" id="profile">
+            <div class="hero-blob"></div>
             <div class="container hero-grid">
                 <div class="hero-identity">
-                    <p class="hero-kicker">Sistem Informasi &middot; Universitas Indonesia</p>
+                    <p class="hero-kicker">Information Systems &middot; Universitas Indonesia</p>
                     <h1>Debora Putri Dion Simamora</h1>
                 </div>
                 <div class="hero-photo">
@@ -31,7 +34,7 @@
                     <img class="avatar" src="/static/img/Debora.jpeg" alt="Photo of Debora">
                 </div>
                 <div class="hero-details">
-                    <p class="bio">Saya mahasiswa Sistem Informasi yang tertarik sama banyak hal, terutama yang berhubungan dengan teknologi, orang, dan kegiatan kreatif. Selebihnya, saya masih suka eksplor dan lihat akan dibawa ke mana rasa penasaran saya.</p>
+                    <p class="bio">Information Systems student curious about the crossroads of technology, people, and creative ideas.</p>
                     <dl class="meta-list">
                         <div class="meta-row">
                             <dt>NPM</dt>
@@ -39,7 +42,7 @@
                         </div>
                         <div class="meta-row">
                             <dt>Program</dt>
-                            <dd>S1 Sistem Informasi</dd>
+                            <dd>Information Systems</dd>
                         </div>
                     </dl>
                     <div class="social-links">
@@ -49,13 +52,322 @@
                     </div>
                 </div>
             </div>
+            <svg class="wave-divider" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,40 C360,100 1080,0 1440,50 L1440,100 L0,100 Z"></path>
+            </svg>
         </section>
+
+        <section class="about fade-in-section" id="about">
+            <div class="about-blob"></div>
+            <div class="container about-content">
+                <p class="section-kicker">hey!</p>
+                <h2>I'm Debora</h2>
+                <div class="about-divider"></div>
+                <p class="about-text">
+                    Hi, I'm Debora, an Information Systems student at the Faculty of
+                    Computer Science, Universitas Indonesia. To me, Information Systems is
+                    exciting precisely because it sits at the intersection of technology and
+                    people: it's not just about building systems that work, but about
+                    making sure they're genuinely useful for the people who use them.
+                </p>
+                <p class="about-text">
+                    <mark class="highlight">I'm still early in this journey</mark>, learning the technical side, like
+                    programming and databases, while bringing along experience from
+                    organizations and event committees I've been part of.
+                </p>
+                <p class="about-text about-text-small">
+                    That combination is what keeps me motivated to keep trying new
+                    things, wherever this process ends up leading.
+                </p>
+            </div>
+            <svg class="wave-divider wave-divider-alt" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,60 C400,0 1040,100 1440,30 L1440,100 L0,100 Z"></path>
+            </svg>
+        </section>
+
+        <section class="experience fade-in-section" id="experience">
+            <div class="experience-blob"></div>
+            <div class="container">
+                <p class="section-kicker">my journey so far</p>
+                <h2>Organizations &amp; Volunteering</h2>
+            </div>
+
+            <p class="marquee-label container">Organizations</p>
+            <div class="marquee">
+                <div class="marquee-track">
+                    <div class="exp-card" onclick="openExpModal('dm')">
+                        <img class="exp-card-bg" src="/static/img/experience/dm-1.jpeg" alt="Digital Marketing Intern">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Digital Marketing Intern</h3>
+                            <p>SISTECH 2026, RISTEK Fasilkom UI</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('sbf')">
+                        <img class="exp-card-bg" src="/static/img/experience/sbf-1.jpeg" alt="Participant, Sekolah BEM Fasilkom">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Participant</h3>
+                            <p>Sekolah BEM Fasilkom (SBF)</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('sd')">
+                        <img class="exp-card-bg" src="/static/img/experience/sd-1.jpeg" alt="Staff, Sports Department">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Staff, Sports Department</h3>
+                            <p>BEM Fasilkom UI</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('hr')">
+                        <img class="exp-card-bg" src="/static/img/experience/hr-1.jpeg" alt="Staff of HR">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Staff of HR</h3>
+                            <p>COMPFEST</p>
+                        </div>
+                    </div>
+
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('dm')">
+                        <img class="exp-card-bg" src="/static/img/experience/dm-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Digital Marketing Intern</h3>
+                            <p>SISTECH 2026, RISTEK Fasilkom UI</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('sbf')">
+                        <img class="exp-card-bg" src="/static/img/experience/sbf-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Participant</h3>
+                            <p>Sekolah BEM Fasilkom (SBF)</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('sd')">
+                        <img class="exp-card-bg" src="/static/img/experience/sd-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Staff, Sports Department</h3>
+                            <p>BEM Fasilkom UI</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('hr')">
+                        <img class="exp-card-bg" src="/static/img/experience/hr-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Staff of HR</h3>
+                            <p>COMPFEST</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="marquee-label container">Volunteering</p>
+            <div class="marquee">
+                <div class="marquee-track marquee-track-reverse">
+                    <div class="exp-card" onclick="openExpModal('ddp0')">
+                        <img class="exp-card-bg" src="/static/img/experience/ddp0-1.jpeg" alt="Mentor, Fundamentals of Programming 0">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>Fundamentals of Programming 0</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('psaf')">
+                        <img class="exp-card-bg" src="/static/img/experience/psaf-1.jpeg" alt="Mentor, PSAF Fasilkom UI 2026">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>PSAF Fasilkom UI 2026</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('oh')">
+                        <img class="exp-card-bg" src="/static/img/experience/oh-1.jpeg" alt="Mentor, Open House Fasilkom UI 2025">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>Open House Fasilkom UI 2025</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" onclick="openExpModal('sospro')">
+                        <img class="exp-card-bg" src="/static/img/experience/sospro-1.jpeg" alt="Event Division Coordinator">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Event Division Coordinator</h3>
+                            <p>Sospro PMB, Fasilkom UI</p>
+                        </div>
+                    </div>
+
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('ddp0')">
+                        <img class="exp-card-bg" src="/static/img/experience/ddp0-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>Fundamentals of Programming 0</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('psaf')">
+                        <img class="exp-card-bg" src="/static/img/experience/psaf-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>PSAF Fasilkom UI 2026</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('oh')">
+                        <img class="exp-card-bg" src="/static/img/experience/oh-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Mentor</h3>
+                            <p>Open House Fasilkom UI 2025</p>
+                        </div>
+                    </div>
+                    <div class="exp-card" aria-hidden="true" onclick="openExpModal('sospro')">
+                        <img class="exp-card-bg" src="/static/img/experience/sospro-1.jpeg" alt="">
+                        <div class="exp-card-overlay"></div>
+                        <div class="exp-card-text">
+                            <h3>Event Division Coordinator</h3>
+                            <p>Sospro PMB, Fasilkom UI</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="exp-modal-overlay" id="expModalOverlay" onclick="closeExpModal()">
+            <div class="exp-modal" onclick="event.stopPropagation()">
+                <button class="exp-modal-close" onclick="closeExpModal()">&times;</button>
+                <div class="exp-modal-hero" id="expModalHero">
+                    <div class="exp-modal-hero-overlay"></div>
+                    <div class="exp-modal-hero-text">
+                        <h3 id="expModalTitle"></h3>
+                        <p id="expModalOrg"></p>
+                    </div>
+                </div>
+                <p class="exp-modal-desc" id="expModalDesc"></p>
+                <div class="exp-modal-gallery" id="expModalGallery"></div>
+            </div>
+        </div>
     </main>
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Debora. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>&copy; 2026 Debora. Faculty of Computer Science, Universitas Indonesia.</p>
         </div>
     </footer>
+
+    <button class="back-to-top" id="backToTop" onclick="scrollToTop()" aria-label="Back to top">
+        &uarr;
+    </button>
+
+    <script>
+        const expData = {
+            ddp0: {
+                title: "Mentor",
+                org: "Fundamentals of Programming 0",
+                description: "Guided incoming students through foundational programming concepts, reviewed their code, and provided constructive feedback to help them build confidence during their early coding journey.",
+                images: ["/static/img/experience/ddp0-1.jpeg"]
+            },
+            psaf: {
+                title: "Mentor",
+                org: "PSAF Fasilkom UI 2026",
+                description: "Mentored new students during their faculty orientation, helping them adapt to university life, build peer connections, and navigate the academic environment at Fasilkom UI.",
+                images: ["/static/img/experience/psaf-1.jpeg"]
+            },
+            oh: {
+                title: "Mentor",
+                org: "Open House Fasilkom UI 2025",
+                description: "Led campus tours and facilitated interactive coding sessions for prospective students, and helped answer their questions about admissions and student life at Fasilkom.",
+                images: ["/static/img/experience/oh-1.jpeg"]
+            },
+            sospro: {
+                title: "Event Division Coordinator",
+                org: "Sospro PMB, Fasilkom UI",
+                description: "Planned and coordinated the logistics for a social project introducing responsible gadget use to children, from scheduling activities to running the sessions on the day.",
+                images: ["/static/img/experience/sospro-1.jpeg"]
+            },
+            dm: {
+                title: "Digital Marketing Intern",
+                org: "SISTECH 2026, RISTEK Fasilkom UI",
+                description: "Acted as the primary liaison between mentors and mentees, coordinated Zoom career coaching sessions, and managed tracking systems for attendance and assignments.",
+                images: ["/static/img/experience/dm-1.jpeg"]
+            },
+            hr: {
+                title: "Staff of HR",
+                org: "COMPFEST",
+                description: "Managed internal relations, supported staff development and engagement initiatives, and helped coordinate administrative processes to ensure smooth operations across divisions.",
+                images: ["/static/img/experience/hr-1.jpeg"]
+            },
+            sd: {
+                title: "Staff, Sports Department",
+                org: "BEM Fasilkom UI",
+                description: "Organized sports events and wellness programs for students, managed sports facility logistics, and fostered an active, healthy campus community within Fasilkom UI.",
+                images: ["/static/img/experience/sd-1.jpeg"]
+            },
+            sbf: {
+                title: "Participant",
+                org: "Sekolah BEM Fasilkom (SBF)",
+                description: "Designed and executed departmental programs, including MUSKAN for talent sourcing and curation, as well as GEKA to appreciate performing contingents across dance, fine arts, music, and drama.",
+                images: ["/static/img/experience/sbf-1.jpeg"]
+            }
+        };
+
+        function openExpModal(key) {
+            const data = expData[key];
+            document.getElementById("expModalTitle").textContent = data.title;
+            document.getElementById("expModalOrg").textContent = data.org;
+            document.getElementById("expModalDesc").textContent = data.description;
+
+            const hero = document.getElementById("expModalHero");
+            if (data.images.length > 0) {
+                hero.style.backgroundImage = "url('" + data.images[0] + "')";
+                hero.style.backgroundColor = "";
+            } else {
+                hero.style.backgroundImage = "none";
+                hero.style.backgroundColor = "var(--accent)";
+            }
+
+            const gallery = document.getElementById("expModalGallery");
+            gallery.innerHTML = "";
+            for (let i = 1; i < data.images.length; i++) {
+                const img = document.createElement("img");
+                img.src = data.images[i];
+                gallery.appendChild(img);
+            }
+
+            document.getElementById("expModalOverlay").classList.add("active");
+        }
+
+        function closeExpModal() {
+            document.getElementById("expModalOverlay").classList.remove("active");
+        }
+
+        const revealEls = document.querySelectorAll(".fade-in-section");
+        const revealObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        revealEls.forEach(function (el) {
+            revealObserver.observe(el);
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        const backToTopBtn = document.getElementById("backToTop");
+        window.addEventListener("scroll", function () {
+            if (window.scrollY > 400) {
+                backToTopBtn.classList.add("visible");
+            } else {
+                backToTopBtn.classList.remove("visible");
+            }
+        });
+    </script>
 </body>
 </html>

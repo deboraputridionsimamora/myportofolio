@@ -4,14 +4,21 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 :root {
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
+    --ink: #26344a;
+    --paper: #faf5ee;
+    --accent: #c1642f;
+    --accent-dark: #8f451c;
+    --line: #e6dccb;
+    --text-muted: #665f52;
     --radius: 4px;
+    --sage-bg: #f0e6d8;
+    --photo-shadow: #c1642f;
+    --pill-bg: #f2dcc7;
 }
 
 body {
@@ -22,7 +29,7 @@ body {
 }
 
 h1, .brand {
-    font-family: "Space Grotesk", -apple-system, sans-serif;
+    font-family: "Fraunces", serif;
 }
 
 .container {
@@ -33,6 +40,10 @@ h1, .brand {
 
 .site-header {
     border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background-color: var(--paper);
+    z-index: 10;
 }
 
 .site-header .container {
@@ -51,6 +62,7 @@ h1, .brand {
 
 .site-header nav {
     display: flex;
+    align-items: center;
     gap: 2rem;
 }
 
@@ -61,10 +73,28 @@ h1, .brand {
 }
 
 .hero {
-    padding: 4.5rem 0 5rem;
+    position: relative;
+    padding: 4.5rem 0 6rem;
+    overflow: hidden;
+}
+
+.hero-blob {
+    position: absolute;
+    top: -20%;
+    left: 10%;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 60%),
+                radial-gradient(circle at 70% 70%, var(--pill-bg) 0%, transparent 60%);
+    opacity: 0.35;
+    filter: blur(50px);
+    z-index: 0;
+    pointer-events: none;
 }
 
 .hero-grid {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: 1.3fr 1fr;
     grid-template-areas:
@@ -130,15 +160,16 @@ h1, .brand {
     font-size: 0.85rem;
     font-weight: 600;
     text-decoration: none;
-    color: var(--paper);
-    background-color: var(--ink);
-    border-radius: var(--radius);
-    padding: 0.5rem 1.1rem;
+    color: var(--accent-dark);
+    background-color: var(--pill-bg);
+    border-radius: 999px;
+    padding: 0.5rem 1.3rem;
     transition: background-color 0.2s ease;
 }
 
 .social-link:hover {
     background-color: var(--accent);
+    color: var(--paper);
 }
 
 .hero-photo {
@@ -153,8 +184,8 @@ h1, .brand {
     left: 1.25rem;
     width: 100%;
     height: 100%;
-    background-color: var(--accent);
-    border-radius: var(--radius);
+    background-color: var(--photo-shadow);
+    border-radius: 16px;
     z-index: 0;
 }
 
@@ -165,8 +196,25 @@ h1, .brand {
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    border-radius: var(--radius);
+    border-radius: 16px;
     border: 3px solid var(--ink);
+}
+
+.wave-divider {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 1;
+}
+
+.wave-divider path {
+    fill: var(--sage-bg);
+}
+
+.wave-divider-alt path {
+    fill: var(--paper);
 }
 
 .site-footer {
@@ -174,6 +222,301 @@ h1, .brand {
     color: var(--text-muted);
     font-size: 0.85rem;
     border-top: 1px solid var(--line);
+}
+
+.about {
+    position: relative;
+    padding: 5rem 0 6rem;
+    background-color: var(--sage-bg);
+    overflow: hidden;
+}
+
+.about-blob {
+    position: absolute;
+    top: -10%;
+    right: 5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle at 40% 40%, var(--accent) 0%, transparent 60%);
+    opacity: 0.2;
+    filter: blur(50px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.about-content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.section-kicker {
+    font-family: "Sacramento", cursive;
+    font-size: 2.2rem;
+    color: var(--ink);
+    font-weight: 400;
+    margin-bottom: 0.25rem;
+}
+
+.about h2 {
+    font-family: "Fraunces", serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin-bottom: 1.5rem;
+}
+
+.about-divider {
+    width: 60px;
+    height: 1px;
+    background-color: var(--text-muted);
+    margin: 0 auto 2rem;
+}
+
+.about-text {
+    color: var(--ink);
+    line-height: 1.9;
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+}
+
+.about-text-small {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.about-text:last-child {
+    margin-bottom: 0;
+}
+
+.highlight {
+    background-color: var(--pill-bg);
+    color: var(--accent-dark);
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+}
+
+.experience {
+    position: relative;
+    padding: 4.5rem 0 5rem;
+    overflow: hidden;
+}
+
+.experience-blob {
+    position: absolute;
+    bottom: -10%;
+    left: 5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle at 60% 60%, var(--pill-bg) 0%, transparent 60%);
+    opacity: 0.4;
+    filter: blur(50px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.experience .container {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 1.5rem;
+}
+
+.marquee-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 2rem 0 0.75rem;
+}
+
+.marquee {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    width: 100%;
+}
+
+.marquee-track {
+    display: flex;
+    gap: 1.5rem;
+    width: max-content;
+    animation: scroll-left 22s linear infinite;
+}
+
+.marquee-track-reverse {
+    animation-direction: reverse;
+}
+
+.marquee:hover .marquee-track {
+    animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.exp-card {
+    position: relative;
+    flex-shrink: 0;
+    width: 240px;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: var(--line);
+}
+
+.exp-card-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.exp-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(19, 24, 34, 0.88), rgba(19, 24, 34, 0.1) 60%);
+}
+
+.exp-card-text {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem;
+    color: #faf5ee;
+}
+
+.exp-card-text h3 {
+    font-family: "Fraunces", serif;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.exp-card-text p {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.exp-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(19, 24, 34, 0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1.5rem;
+}
+
+.exp-modal-overlay.active {
+    display: flex;
+}
+
+.exp-modal {
+    position: relative;
+    background-color: var(--paper);
+    border-radius: 16px;
+    max-width: 480px;
+    width: 100%;
+    padding: 1.5rem;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.exp-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--ink);
+}
+
+.exp-modal-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-color: var(--line);
+    background-size: cover;
+    background-position: top;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.exp-modal-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(19, 24, 34, 0.8), rgba(19, 24, 34, 0.05) 65%);
+}
+
+.exp-modal-hero-text {
+    position: relative;
+    z-index: 1;
+    padding: 1rem;
+    color: #faf5ee;
+}
+
+.exp-modal-hero-text h3 {
+    font-family: "Fraunces", serif;
+    font-size: 1.2rem;
+    margin-bottom: 0.15rem;
+}
+
+.exp-modal-hero-text p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.exp-modal-desc {
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+.exp-modal-gallery {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.exp-modal-gallery img {
+    width: calc(33.333% - 0.34rem);
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @media (max-width: 600px) {
