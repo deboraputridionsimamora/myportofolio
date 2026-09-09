@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debora - Portfolio</title>
+    <<title>{{ name }} - Portofolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Sacramento&display=swap" rel="stylesheet">
@@ -12,11 +12,12 @@
 <body>
     <header class="site-header">
         <div class="container">
-            <a href="#profile" class="brand">Debora Putri Dion Simamora</a>
+            <a href="#profile" class="brand">{{ name }}</a>
             <nav>
                 <a href="#profile">Profile</a>
                 <a href="#about">About</a>
                 <a href="#experience">Experience</a>
+                <a href="{% url 'main:show_experience' %}">My Journey</a>
             </nav>
         </div>
     </header>
@@ -27,22 +28,22 @@
             <div class="container hero-grid">
                 <div class="hero-identity">
                     <p class="hero-kicker">Information Systems &middot; Universitas Indonesia</p>
-                    <h1>Debora Putri Dion Simamora</h1>
+                    <h1>{{ name }}</h1>
                 </div>
                 <div class="hero-photo">
                     <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/Debora.jpeg" alt="Photo of Debora">
+                    <img class="avatar" src="/static/img/Debora.jpeg" alt="Photo of {{ name }}">
                 </div>
                 <div class="hero-details">
-                    <p class="bio">Information Systems student curious about the crossroads of technology, people, and creative ideas.</p>
+                    <p class="bio">{{ bio }}</p>
                     <dl class="meta-list">
                         <div class="meta-row">
                             <dt>NPM</dt>
-                            <dd>2506544126</dd>
+                            <dd>{{ npm }}</dd>
                         </div>
                         <div class="meta-row">
                             <dt>Program</dt>
-                            <dd>Information Systems</dd>
+                            <dd>{{ study_program }}</dd>
                         </div>
                     </dl>
                     <div class="social-links">
@@ -366,7 +367,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Debora. Faculty of Computer Science, Universitas Indonesia.</p>
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
             <nav>
                 <p>"So many colors to choose from, you choose blue."</p>
             </nav>
