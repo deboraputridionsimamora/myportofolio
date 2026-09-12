@@ -61,6 +61,8 @@ Di luar kebutuhan minimum tugas, saya juga menambahkan beberapa fitur seperti st
 
 Pada Tutorial 02, saya belajar konsep Model-View-Template (MVT) di Django untuk pertama kalinya. Saya membuat model `Experience` untuk menyimpan data pengalaman di database, view `show_experience` yang mengambil data tersebut dan mengirimkannya ke template, serta routing baru di `main/urls.py`. Karena ini konsep yang benar-benar baru buat saya, saya banyak bertanya ke Claude soal bagaimana urls.py, view, model, dan template ini saling terhubung sebelum mulai coding. Saya juga menambahkan unit test untuk memastikan halaman bisa diakses, data yang saya masukkan muncul dengan benar, dan pesan kondisi kosong muncul saat belum ada data.
 
+Saya juga sempat menemukan bahwa data yang saya masukkan melalui Django shell di local tidak otomatis muncul ketika project di-deploy ke PWS, karena `db.sqlite3` di local tidak ikut ter-push ke repository. Karena masalah ini belum pernah dibahas di tutorial manapun, saya bertanya ke Claude bagaimana cara mengisi data ke database production tanpa perlu akses langsung ke server PWS. Dari situ saya diperkenalkan dengan konsep migrasi data menggunakan `migrations.RunPython()`, yang saya terapkan pada file `main/migrations/0004_seed_certifications_and_experiences.py` untuk mengisi data Experience dan Certification secara terprogram. Karena proses deploy PWS otomatis menjalankan `python manage.py migrate` setiap kali menerima push baru, data ini ikut terisi secara otomatis ke database production.
+
 ### Individual Assignment 2
 
 Pada Individual Assignment 2, saya menerapkan pola MVT yang sama untuk bagian portfolio baru, yaitu Licenses & Certifications, lengkap dengan gambar untuk setiap sertifikat. Saya membuat model `Certification` dengan field title, issuer, issue_date, credential_id, description, dan image, kemudian view dan template baru untuk menampilkannya, serta rute baru yang bisa diakses lewat navbar. Data lima sertifikat saya (TOEFL ITP, finalis International Science Olympiad, Student Council Executive Committee, UKBI, dan Super Mentor Staff DDP0) saya masukkan melalui Django shell, bukan ditulis langsung di HTML.
@@ -169,7 +171,7 @@ Menurut saya, penggunaan AI membantu mempercepat proses eksplorasi dan troublesh
 
 ## Update AI Disclosure: Tutorial 02 & Individual Assignment 2
 
-Pada Tutorial 02 dan Individual Assignment 2, saya kembali menggunakan Claude sebagai alat bantu, kali ini untuk mempelajari konsep Model-View-Template (MVT) di Django yang benar-benar baru buat saya.
+Pada Tutorial 02 dan Individual Assignment 2, saya kembali menggunakan Claude sebagai alat bantu, kali ini untuk mempelajari konsep Model-View-Template (MVT) di Django yang benar-benar baru buat saya. Saya juga sempat kebingungan soal kenapa data sertifikat tidak muncul di PWS padahal sudah ada di local, dan setelah bertanya ke Claude, saya baru tahu bahwa ini soal database local dan production yang terpisah, lalu dibantu memahami cara mengisi data lewat migrasi Django.
 
 ### Bagian yang Dibantu AI
 
