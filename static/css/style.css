@@ -244,7 +244,7 @@ h1, .brand {
     width: 400px;
     height: 400px;
     background: radial-gradient(circle at 40% 40%, var(--accent) 0%, transparent 60%);
-    opacity: 0.2;
+    opacity: 0;
     filter: blur(50px);
     z-index: 0;
     pointer-events: none;
@@ -632,4 +632,111 @@ h1, .brand {
     .social-links {
         justify-content: flex-start;
     }
+}
+
+.cert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.cert-card {
+    padding: 1.25rem;
+    background-color: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.cert-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+}
+
+.cert-issuer {
+    color: var(--accent-dark);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.15rem;
+}
+
+.cert-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.cert-credential {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.cert-description {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.cert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.cert-card {
+    padding: 1.25rem;
+    background-color: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.cert-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.cert-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+}
+
+.cert-issuer {
+    color: var(--accent-dark);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.15rem;
+}
+
+.cert-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.cert-credential {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.cert-description {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }

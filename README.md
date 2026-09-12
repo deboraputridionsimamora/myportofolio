@@ -18,9 +18,10 @@ Website memiliki beberapa fitur utama:
 
 * **Profile (Hero):** menampilkan nama, program studi, NPM, foto, serta link GitHub, LinkedIn, dan Email dalam bentuk tombol pil. Bagian ini juga menggunakan latar gradasi dan wave divider.
 * **About Me:** berisi cerita singkat tentang diri saya dengan layout rata tengah, garis pembatas dekoratif, dan highlight pada beberapa frasa penting.
-* **Experience:** menampilkan pengalaman organisasi dan volunteering. Setiap kategori menggunakan animasi marquee dengan arah yang berbeda, foto dokumentasi sebagai latar kartu, serta modal berisi foto dan deskripsi ketika kartu diklik.
 * **Navigation & Animation:** terdapat sticky navbar dengan smooth scroll, responsive navigation, serta animasi fade-in ketika section mulai masuk ke area layar.
 * **Responsive Design:** layout website disesuaikan agar tetap rapi dan nyaman digunakan pada desktop maupun mobile.
+* **Experience:** menampilkan pengalaman organisasi dan volunteering pada halaman tersendiri (My Journey), terpisah dari halaman profil. Setiap kategori menggunakan animasi marquee dengan arah yang berbeda dan foto dokumentasi sebagai latar kartu.
+* **Licenses & Certifications:** menampilkan sertifikat dan penghargaan yang pernah saya terima, masing-masing dengan gambar sertifikat, nama, penerbit, tanggal terbit, nomor kredensial (jika ada), dan deskripsi singkat. Data diambil dari database menggunakan pola Model-View-Template.
 
 Seluruh interaktivitas pada implementasi akhir dibuat tanpa JavaScript. Modal menggunakan teknik CSS `:target`, sedangkan animasi scroll menggunakan `animation-timeline: view()`. Saya juga menggunakan `@supports` sebagai fallback untuk browser yang belum mendukung fitur tersebut.
 
@@ -56,6 +57,16 @@ Dalam proses pengembangan, saya menggunakan Claude sebagai alat bantu untuk memb
 
 Di luar kebutuhan minimum tugas, saya juga menambahkan beberapa fitur seperti sticky navbar dengan smooth scroll, modal detail untuk setiap pengalaman, scroll-linked fade-in animation, gradient blob, dan wave divider antar-section.
 
+### Tutorial 02
+
+Pada Tutorial 02, saya belajar konsep Model-View-Template (MVT) di Django untuk pertama kalinya. Saya membuat model `Experience` untuk menyimpan data pengalaman di database, view `show_experience` yang mengambil data tersebut dan mengirimkannya ke template, serta routing baru di `main/urls.py`. Karena ini konsep yang benar-benar baru buat saya, saya banyak bertanya ke Claude soal bagaimana urls.py, view, model, dan template ini saling terhubung sebelum mulai coding. Saya juga menambahkan unit test untuk memastikan halaman bisa diakses, data yang saya masukkan muncul dengan benar, dan pesan kondisi kosong muncul saat belum ada data.
+
+### Individual Assignment 2
+
+Pada Individual Assignment 2, saya menerapkan pola MVT yang sama untuk bagian portfolio baru, yaitu Licenses & Certifications, lengkap dengan gambar untuk setiap sertifikat. Saya membuat model `Certification` dengan field title, issuer, issue_date, credential_id, description, dan image, kemudian view dan template baru untuk menampilkannya, serta rute baru yang bisa diakses lewat navbar. Data lima sertifikat saya (TOEFL ITP, finalis International Science Olympiad, Student Council Executive Committee, UKBI, dan Super Mentor Staff DDP0) saya masukkan melalui Django shell, bukan ditulis langsung di HTML.
+
+Di luar kebutuhan minimum tugas, saya juga menata ulang halaman Experience. Bagian marquee foto yang sebelumnya ada di halaman profil saya pindahkan ke halaman My Journey tersendiri, sedangkan data dari model `Experience` tetap dirender di halaman yang sama untuk memenuhi ketentuan Tutorial 02, tetapi disembunyikan secara visual karena informasinya sudah terwakili oleh marquee. Saya juga menambahkan tiga unit test baru untuk memastikan halaman Certifications bisa diakses, datanya muncul dengan benar, dan pesan kondisi kosong berfungsi.
+
 ## Pertanyaan Reflektif
 
 ### Tugas 1
@@ -71,6 +82,20 @@ Bagian yang paling menantang untuk dibuat responsive adalah hero section dan nav
 **3. Keterbatasan Static Web**
 
 Karena website ini masih berupa static web, kontennya masih ditulis langsung di HTML. Jadi, ketika saya ingin menambahkan atau mengubah pengalaman, saya harus mengubah kode HTML secara manual. Menurut saya, cara ini masih cukup untuk portfolio sederhana, tetapi akan kurang praktis jika jumlah pengalaman saya semakin banyak. Untuk pengembangan selanjutnya, saya ingin menyimpan data pengalaman menggunakan model Django dan database, sehingga konten dapat dikelola tanpa harus mengubah HTML secara manual setiap kali ada perubahan.
+
+### Tugas 2
+
+**1. Alur MVT dari Request sampai Ditampilkan**
+
+Ketika pengguna membuka halaman `/certification/`, permintaan pertama diterima oleh `urls.py` milik proyek (`portofolio/urls.py`), yang meneruskan permintaan tersebut ke `urls.py` milik aplikasi `main` melalui `include("main.urls")`. Di `main/urls.py`, path `"certification/"` dicocokkan dan memanggil fungsi view `show_certification`. View ini mengambil seluruh data dari model `Certification` menggunakan `Certification.objects.all()`, memasukkannya ke dalam context, lalu mengirim context tersebut ke template `certification.html` melalui fungsi `render()`. Template kemudian memproses context ini menggunakan perulangan `{% for %}` untuk menampilkan setiap data, dan hasil akhirnya dikirim sebagai response HTML ke browser.
+
+**2. Kenapa Data Sebaiknya di Model, Bukan Hardcode di Template**
+
+Menurut saya, menyimpan data di model membuat portfolio lebih mudah dikembangkan ke depannya. Kalau saya ingin menambah atau mengubah satu sertifikat, saya cukup melakukannya lewat Django shell atau admin panel, tanpa perlu membuka dan mengedit file HTML secara manual. Selain itu, karena semua data ditampilkan lewat satu blok template yang sama menggunakan perulangan, tampilannya jadi lebih konsisten dan saya tidak perlu menyalin-tempel HTML untuk setiap item baru. Cara ini juga membuat project tetap sederhana meskipun jumlah data bertambah banyak, karena yang bertambah hanya baris data di database, bukan baris kode di template.
+
+**3. Perbedaan makemigrations dan migrate**
+
+`makemigrations` digunakan untuk membuat berkas migrasi baru yang mencatat perubahan pada model, misalnya field atau tabel baru, berdasarkan perbandingan antara kode model saat ini dengan riwayat migrasi sebelumnya. Perintah ini belum benar-benar mengubah database, hanya menyiapkan instruksi perubahannya dalam bentuk berkas Python. Sementara itu, `migrate` menjalankan instruksi dari berkas migrasi tersebut ke database yang sesungguhnya. Contoh perubahan yang mengharuskan saya menjalankan keduanya adalah saat saya menambahkan field `image` pada model `Certification`. Setelah menambahkan field tersebut di `models.py`, saya menjalankan `makemigrations` untuk membuat berkas migrasinya, kemudian `migrate` supaya kolom `image` benar-benar ditambahkan ke tabel `Certification` di `db.sqlite3`.
 
 ## AI Disclosure
 
@@ -141,3 +166,47 @@ Claude tidak dapat menjalankan atau melihat tampilan project Django saya secara 
 Saya juga menyadari bahwa masih ada beberapa bagian teknis yang perlu saya pahami lebih dalam, terutama CSS Grid/Flexbox, animasi, `:target`, dan `animation-timeline`. Karena beberapa bagian kode dikembangkan dengan bantuan AI, saya perlu mempelajari kembali cara kerja bagian-bagian tersebut agar dapat memahami dan menjelaskan project saya secara mandiri.
 
 Menurut saya, penggunaan AI membantu mempercepat proses eksplorasi dan troubleshooting, terutama ketika saya mengalami kesulitan dalam menemukan pendekatan yang sesuai. Namun, AI tidak selalu memberikan solusi yang langsung sesuai dengan kebutuhan project. Saya tetap perlu menentukan apa yang ingin dibuat, memilih alternatif yang sesuai dengan requirement, menyesuaikan hasilnya dengan project, dan mengecek hasil akhirnya secara langsung melalui browser dan perangkat mobile.
+
+## Update AI Disclosure: Tutorial 02 & Individual Assignment 2
+
+Pada Tutorial 02 dan Individual Assignment 2, saya kembali menggunakan Claude sebagai alat bantu, kali ini untuk mempelajari konsep Model-View-Template (MVT) di Django yang benar-benar baru buat saya.
+
+### Bagian yang Dibantu AI
+
+Claude membantu menjelaskan bagaimana model, view, template, dan urls.py saling terhubung, serta membantu menuliskan kode untuk model `Experience` dan `Certification`, view, template, dan unit test. Claude juga membantu saya menata ulang halaman Experience ketika saya merasa tampilan marquee dan data dari database terlihat dobel di halaman yang sama, sampai akhirnya ditemukan solusi memisahkan tampilan visual (marquee) dari data teknis untuk keperluan Tutorial 02.
+
+### Bagian yang Saya Kerjakan dan Putuskan Sendiri
+
+Saya menentukan sendiri bagian portfolio yang ingin dijadikan fitur baru, yaitu Licenses & Certifications, serta membawa seluruh data sertifikat saya sendiri (dari LinkedIn dan sertifikat fisik yang saya scan). Saya juga menentukan kategori untuk setiap pengalaman (internship atau volunteer) berdasarkan pemahaman saya sendiri terhadap masing-masing peran, serta status pengalaman mana yang masih berjalan dan mana yang sudah selesai.
+
+Untuk bagian implementasi, saya tidak hanya menyalin kode yang diberikan, tetapi juga mengerjakan sendiri beberapa bagian secara manual di VS Code, seperti memindahkan section Experience dari halaman profil ke halaman baru, menghapus bagian modal yang sudah tidak diperlukan, serta menyesuaikan nav dan struktur HTML ketika hasil pertama belum sesuai dengan yang saya inginkan. Ketika ada bagian yang errornya belum jelas penyebabnya atau saya ingin memastikan pendekatan yang saya pilih sudah tepat, barulah saya berdiskusi dengan Claude. Sebelum melakukan commit, saya selalu mengecek tampilan di browser dan menjalankan `python manage.py test` untuk memastikan semuanya berjalan dengan benar.
+
+### AI Chat / Prompting Log
+
+1. **Memahami alur MVT**
+
+   > "Bisa jelasin dulu ga kaya apa tugas di assignment 2 ini?"
+
+   Digunakan untuk memahami keseluruhan requirement sebelum mulai menentukan pendekatan implementasi.
+
+2. **Menentukan field model Certification**
+
+   > "Coba jelasin dulu ya, biar aku bisa kategoriin sertifikat-sertifikat ini."
+
+   Digunakan saat menentukan field apa saja yang dibutuhkan model `Certification` berdasarkan data sertifikat yang saya miliki.
+
+3. **Menata ulang halaman Experience**
+
+   > "Kayanya aku malah gasuka penempatannya gini, saran dong."
+
+   Setelah mendapat beberapa opsi dari Claude, saya mencoba sendiri memindahkan bagian HTML-nya secara manual di VS Code terlebih dahulu, dan baru kembali bertanya ketika hasilnya belum sesuai dengan yang saya bayangkan.
+
+4. **Menambahkan gambar ke sertifikat**
+
+   > "Gimana caranya biar ada gambar sertifnya juga di kartu Certification?"
+
+   Digunakan untuk menentukan field `image` pada model dan cara menghubungkannya ke file gambar; proses menyiapkan dan mengonversi file gambar sertifikatnya sendiri saya lakukan secara manual.
+
+### Keterbatasan AI dan Pemahaman Saya
+
+Sama seperti pada Individual Assignment 1, Claude tidak dapat menjalankan atau melihat langsung tampilan project saya, sehingga saya perlu menjelaskan apa yang terlihat setiap kali ada error atau tampilan yang tidak sesuai. Karena konsep MVT ini benar-benar baru buat saya, saya menyadari masih perlu mempelajari lebih dalam bagaimana model, view, template, dan urls.py bekerja bersama, khususnya bagian migrasi database dan Django Template Language, agar saya bisa menjelaskan dan mengembangkan bagian ini secara mandiri ke depannya.
