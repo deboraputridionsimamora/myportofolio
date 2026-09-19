@@ -69,6 +69,24 @@ Pada Individual Assignment 2, saya menerapkan pola MVT yang sama untuk bagian po
 
 Di luar kebutuhan minimum tugas, saya juga menata ulang halaman Experience. Bagian marquee foto yang sebelumnya ada di halaman profil saya pindahkan ke halaman My Journey tersendiri, sedangkan data dari model `Experience` tetap dirender di halaman yang sama untuk memenuhi ketentuan Tutorial 02, tetapi disembunyikan secara visual karena informasinya sudah terwakili oleh marquee. Saya juga menambahkan tiga unit test baru untuk memastikan halaman Certifications bisa diakses, datanya muncul dengan benar, dan pesan kondisi kosong berfungsi.
 
+### Tutorial 03
+
+Pada Tutorial 03, saya belajar konsep Data Delivery menggunakan JSON dan menerapkan skeleton template (`base.html`) supaya navbar dan footer tidak ditulis berulang di setiap halaman. Saya awalnya mengikuti contoh dari modul yang menggunakan section Projects sebagai latihan (Create, Delete, dan JSON delivery), namun karena section ini belum pernah ada di portofolio saya sebelumnya, section tersebut kemudian saya hapus setelah Individual Assignment 3 selesai, dan digantikan sepenuhnya oleh section Licenses & Certifications yang sudah ada sejak Tutorial 02.
+
+Proses refactor ke `base.html` sempat menimbulkan beberapa error yang tidak saya duga, seperti `TemplateSyntaxError` karena saya lupa menghapus tag HTML lama sebelum menambahkan `{% extends %}`, dan `NoReverseMatch` karena ada nama URL yang tidak sinkron antara template dan `urls.py`. Saya juga sempat mengalami error `CSRF verification failed` ketika mencoba submit form di PWS, yang ternyata disebabkan oleh trailing slash pada `CSRF_TRUSTED_ORIGINS` di `settings.py`.
+
+Menjelang akhir Tutorial 03, saya baru menyadari bahwa `experience.html` dan `certification.html` (yang dibuat sebelum Tutorial 03) belum mengikuti struktur `extends base.html`, sehingga navbar di kedua halaman tersebut tidak konsisten dengan halaman lain. Saya kemudian melakukan refactor pada kedua berkas tersebut. Saat menjalankan `python manage.py test`, saya juga menemukan dua test yang gagal: satu karena navbar masih menggunakan tautan `#profile` alih-alih tautan URL yang sebenarnya, dan satu lagi karena migrasi `0004_seed_certifications_and_experiences.py` yang berisi data seed ikut dijalankan pada database sementara saat testing, sehingga data uji coba tercampur dengan data seed. Saya memperbaiki keduanya dengan mengubah tautan navbar dan memindahkan migrasi berikutnya supaya tidak lagi bergantung pada migrasi seed tersebut, sebelum menghapus berkas migrasi seed itu.
+
+### Individual Assignment 3
+
+Pada Individual Assignment 3, saya menerapkan mekanisme Form dan Data Delivery pada section Licenses & Certifications, karena section ini sudah memiliki variasi tipe data (`CharField`, `DateField`, `TextField`) yang sesuai dengan ketentuan tugas dan sudah ada datanya sejak Individual Assignment 2. Saya membuat `CertificationForm` di `forms.py`, serta fungsi Create, **Update**, Delete, dan JSON delivery untuk Certification.
+
+Fitur Update merupakan hal baru yang belum diajarkan di Tutorial 03 (yang hanya mencontohkan Create dan Delete), sehingga saya perlu memahami konsep `instance=` pada ModelForm untuk mengisi form dengan data lama sebelum disimpan ulang. Saya sempat membuat kesalahan pada tahap awal, yaitu `action` pada form Create dan Update yang sama-sama mengarah ke fungsi create, sehingga proses update yang saya lakukan justru menghasilkan data baru, bukan memperbarui data lama. Saya memperbaikinya dengan mengirim `form_action`, `form_title`, dan `submit_label` yang berbeda dari masing-masing view melalui context, sehingga satu template form (`certification_form.html`) dapat dipakai ulang untuk Create maupun Update.
+
+Setelah checklist utama tugas selesai, saya menghapus section Projects yang sebelumnya dibuat sebagai latihan di Tutorial 03, karena portofolio ini sudah memiliki section Certifications yang lebih relevan dan sudah menerapkan mekanisme yang sama. Proses ini melibatkan penghapusan model, view, form, url, dan template terkait Projects, serta migrasi terkait yang perlu ditelusuri satu per satu supaya tidak meninggalkan referensi yang rusak.
+
+Di luar ketentuan minimum tugas, saya juga menambahkan proteksi sederhana berupa field password pada form Create, Update, dan Delete Certification. Password disimpan di `.env` sebagai `FORM_PASSWORD` dan dicocokkan secara manual di view sebelum data disimpan atau dihapus. Ini bukan sistem autentikasi sesungguhnya, melainkan langkah antisipasi sementara mengingat konsep Authentication, Session, dan Cookies belum diajarkan sampai tutorial ini, sehingga sebenarnya siapa pun yang mengetahui URL dapat menambah, mengubah, atau menghapus data pada portofolio saya.
+
 ## Pertanyaan Reflektif
 
 ### Tugas 1
@@ -98,6 +116,24 @@ Menurut saya, menyimpan data di model membuat portfolio lebih mudah dikembangkan
 **3. Perbedaan makemigrations dan migrate**
 
 `makemigrations` digunakan untuk membuat berkas migrasi baru yang mencatat perubahan pada model, misalnya field atau tabel baru, berdasarkan perbandingan antara kode model saat ini dengan riwayat migrasi sebelumnya. Perintah ini belum benar-benar mengubah database, hanya menyiapkan instruksi perubahannya dalam bentuk berkas Python. Sementara itu, `migrate` menjalankan instruksi dari berkas migrasi tersebut ke database yang sesungguhnya. Contoh perubahan yang mengharuskan saya menjalankan keduanya adalah saat saya menambahkan field `image` pada model `Certification`. Setelah menambahkan field tersebut di `models.py`, saya menjalankan `makemigrations` untuk membuat berkas migrasinya, kemudian `migrate` supaya kolom `image` benar-benar ditambahkan ke tabel `Certification` di `db.sqlite3`.
+
+### Tugas 3
+
+1. **ModelForm vs HTML Manual, dan Alasan `{% csrf_token %}`**
+
+ModelForm dipakai karena dia otomatis menyalin struktur dari model (`Certification`) menjadi form, jadi saya tidak perlu menulis satu per satu tag `<input>` untuk setiap field secara manual. Field seperti `issue_date` otomatis menjadi kalender picker, dan kalau nanti ada field baru ditambahkan ke model, form-nya tinggal disesuaikan di `fields = [...]`, tanpa perlu membongkar ulang HTML. ModelForm juga otomatis memvalidasi input (misalnya `issue_date` harus berformat tanggal yang valid) tanpa saya perlu menulis validasi manual.
+
+`{% csrf_token %}` wajib ada karena form yang mengirim data lewat method POST rawan disalahgunakan lewat serangan CSRF (Cross-Site Request Forgery), misalnya situs jahat yang membuat form tersembunyi untuk diam-diam mengirim request ke server kita menggunakan sesi login korban. Token ini berfungsi seperti kode rahasia sekali pakai yang dibuat server, dan submit form hanya diterima kalau token-nya cocok, sehingga request dari luar situs kita otomatis ditolak.
+
+2. **Kenapa JSON Lebih Disukai Dibanding XML**
+
+JSON lebih ringkas karena tidak perlu menulis closing tag di setiap elemen seperti XML, sehingga ukuran datanya lebih kecil dan lebih cepat dikirim. JSON juga lebih mudah di-parsing oleh JavaScript, karena struktur JSON memang berasal dari cara JavaScript menulis object, sehingga begitu data JSON sampai di browser, bisa langsung dipakai tanpa proses konversi tambahan. Ini penting untuk arsitektur web modern (seperti REST API) yang banyak mengirim data bolak-balik antara server dan frontend.
+
+3. **Alur View Mengembalikan Data JSON dan Alasan Serialization**
+
+Alurnya, ketika ada request ke endpoint (misalnya `/api/certifications/`), view mengambil data dari database (`Certification.objects.all()`). Data ini masih berbentuk objek Python/Django, bukan teks. Kemudian `serializers.serialize("json", ...)` dipanggil untuk mengubah objek tersebut menjadi teks berformat JSON. Setelah itu, teks JSON tersebut dibungkus menggunakan `HttpResponse` dengan `content_type="application/json"` supaya browser atau aplikasi lain tahu bahwa ini format JSON, lalu dikirim kembali sebagai response.
+
+Serialization perlu dilakukan karena objek Python (seperti instance model Django) strukturnya hanya "dikenali" oleh Python saja, tidak bisa langsung dikirim lewat internet. Data yang dikirim lewat HTTP harus berbentuk teks (string), sehingga objek tersebut perlu "diterjemahkan" dulu menjadi teks JSON yang formatnya universal, supaya bisa dibaca oleh bahasa pemrograman lain juga, tidak hanya Python.
 
 ## AI Disclosure
 
@@ -212,3 +248,49 @@ Untuk bagian implementasi, saya tidak hanya menyalin kode yang diberikan, tetapi
 ### Keterbatasan AI dan Pemahaman Saya
 
 Sama seperti pada Individual Assignment 1, Claude tidak dapat menjalankan atau melihat langsung tampilan project saya, sehingga saya perlu menjelaskan apa yang terlihat setiap kali ada error atau tampilan yang tidak sesuai. Karena konsep MVT ini benar-benar baru buat saya, saya menyadari masih perlu mempelajari lebih dalam bagaimana model, view, template, dan urls.py bekerja bersama, khususnya bagian migrasi database dan Django Template Language, agar saya bisa menjelaskan dan mengembangkan bagian ini secara mandiri ke depannya.
+
+## Update AI Disclosure: Tutorial 03 & Individual Assignment 3
+
+Pada Tutorial 03 dan Individual Assignment 3, saya menggunakan Claude terutama untuk membantu debugging, karena banyak error yang muncul justru dari proses refactor kode lama (dari Tutorial 2) ke struktur baru yang menggunakan `base.html`, bukan dari materi baru itu sendiri.
+
+### Bagian yang Dibantu AI
+
+Claude membantu menjelaskan penyebab beberapa error yang saya temui, seperti `TemplateSyntaxError`, `NoReverseMatch`, `TemplateDoesNotExist`, dan `CSRF verification failed`, serta membantu menulis kode untuk `CertificationForm`, view Create/Update/Delete/JSON Certification, dan modal konfirmasi delete. Claude juga membantu saya memahami kenapa dua unit test gagal setelah refactor (navbar yang masih menggunakan tautan `#profile`, dan migrasi seed data yang ikut berjalan saat testing), serta membantu saya menelusuri langkah-langkah yang perlu diperiksa satu per satu ketika saya memutuskan menghapus section Projects di akhir pengerjaan.
+
+### Bagian yang Saya Kerjakan dan Putuskan Sendiri
+
+Saya memutuskan sendiri untuk tetap menggunakan section Certifications (bukan section baru) untuk Individual Assignment 3, karena field yang sudah ada dinilai cukup bervariasi, dan pada akhirnya memutuskan untuk menghapus section Projects karena sudah tergantikan oleh Certifications. Setelah mendapat penjelasan dari Claude soal penyebab suatu error, saya sendiri yang membuka dan mengedit berkas terkait (`views.py`, `urls.py`, `forms.py`, `admin.py`, template), menjalankan `python manage.py test` dan `python manage.py runserver` untuk memastikan perbaikannya benar, serta mengecek tampilan langsung di browser (local maupun PWS) setelah setiap perubahan.
+
+Saat menghapus section Projects, saya juga sempat salah langkah dengan menghapus berkas migrasi `0005_project.py` secara manual tanpa membuat migrasi baru terlebih dahulu, yang sebenarnya bisa membuat riwayat migrasi dan database menjadi tidak sinkron. Saya kemudian memeriksa sendiri status migrasi menggunakan `python manage.py showmigrations` dan membandingkannya dengan berkas yang ada di folder `migrations`, untuk memastikan tidak ada referensi yang rusak sebelum melanjutkan.
+
+Saya juga menentukan sendiri untuk menambahkan proteksi password sederhana sebagai fitur tambahan di luar requirement minimum, meskipun saya menyadari ini bukan solusi keamanan yang sesungguhnya.
+
+### AI Chat / Prompting Log
+
+1. **Debugging error setelah refactor**
+
+   > "Saya sempat bingung karena setelah refactor ke base.html, alurnya terasa lompat-lompat. Saya juga menempelkan pesan error yang muncul di terminal maupun browser untuk ditelusuri bersama."
+
+   Digunakan berulang kali sepanjang Tutorial 03 untuk memahami penyebab error setelah proses refactor, seperti `TemplateSyntaxError`, `NoReverseMatch`, dan `CSRF verification failed`.
+
+2. **Memahami hasil test yang gagal**
+
+   > "Tutorial ini sudah dinilai, tetapi ada feedback bahwa salah satu test (`test_completed_experience`) gagal. Saya menempelkan pesan error lengkapnya untuk ditelusuri penyebabnya."
+
+   Digunakan untuk memahami pesan error dari `python manage.py test` dan menemukan bahwa penyebabnya adalah migrasi seed data yang ikut berjalan di database testing.
+
+3. **Menentukan section untuk Individual Assignment 3**
+
+   > "Saya meminta pendapat apakah sebaiknya tetap menggunakan section Certifications atau mengganti ke section lain untuk Individual Assignment 3."
+
+   Digunakan untuk meminta pertimbangan sebelum memutuskan tetap menggunakan section Certifications.
+
+4. **Menanyakan keterbatasan keamanan**
+
+   > "Saya menanyakan apakah section yang bisa diisi lewat form ini berarti bisa diubah-ubah oleh siapa saja yang mengetahui URL-nya, dan apa yang bisa dilakukan untuk mengantisipasinya."
+
+   Digunakan untuk memahami bahwa keterbatasan ini memang belum bisa diatasi karena materi Authentication belum diajarkan, sebelum memutuskan menambahkan proteksi password sederhana sebagai langkah sementara.
+
+### Keterbatasan AI dan Pemahaman Saya
+
+Pada tutorial ini, saya menyadari bahwa proses refactor kode lama ternyata lebih rawan menimbulkan error dibanding menulis kode baru dari nol, karena ada bagian-bagian yang mudah terlewat, seperti berkas HTML yang belum ikut di-extend, migrasi yang saling bergantung, atau referensi ke model yang sudah dihapus namun masih tertinggal di berkas lain (seperti `admin.py`). Claude membantu saya menelusuri error tersebut satu per satu, tetapi saya tetap perlu memeriksa kembali setiap berkas secara manual untuk memastikan tidak ada bagian lain yang tertinggal. Saya juga menyadari bahwa proteksi password yang saya tambahkan bukan solusi keamanan yang sesungguhnya, dan saya perlu mempelajari konsep Authentication, Session, dan Cookies lebih lanjut di tutorial-tutorial berikutnya untuk benar-benar membatasi akses ke fitur Create, Update, dan Delete pada portofolio saya.

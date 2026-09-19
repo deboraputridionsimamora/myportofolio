@@ -6,8 +6,17 @@
     <main>
         <section class="experience-section" id="certification">
             <div class="container">
-                <p class="exp-section-kicker">What i've earned along &amp; the way</p>
-                <h1>Licenses &amp; Certifications</h1>
+                <div class="project-header">
+                    <div>
+                        <p class="exp-section-kicker">What i've earned along &amp; the way</p>
+                        <h1>Licenses &amp; Certifications</h1>
+                    </div>
+                    <a href="{% url 'main:create_certification' %}"
+                       class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Sertifikat
+                    </a>
+                </div>
 
                 <div class="cert-grid">
                     {% for cert in certification_list %}
@@ -26,6 +35,11 @@
                             {% if cert.description %}
                                 <p class="cert-description">{{ cert.description }}</p>
                             {% endif %}
+
+                            <div class="project-actions">
+                                <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
+                                {% include "components/certification_delete_modal.html" with cert=cert %}
+                            </div>
                         </article>
                     {% empty %}
                         <p class="empty-state">

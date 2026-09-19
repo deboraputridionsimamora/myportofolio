@@ -1,10 +1,13 @@
+import os
+
 from django.contrib import messages
 from django.core import serializers
 from django.http import HttpResponse
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from main.models import Experience, Certification, Project
-from main.forms import ProjectForm
+from main.models import Experience, Certification
+from main.forms import CertificationForm
 
 
 def show_main(request):
@@ -28,60 +31,81 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
-def show_certification(request):
-    context = {
-        "name": "Debora Putri Dion Simamora",
-        "certification_list": Certification.objects.all().order_by("-issue_date"),
-    }
-    return render(request, "certification.html", context)
-
-def create_project(request):
-    form = ProjectForm(request.POST or None)
+def create_certification(request):
+    form = CertificationForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Proyek baru berhasil ditambahkan!")
-        return redirect("main:show_projects")
+        if form.cleaned_data["password"] != os.getenv("FORM_PASSWORD"):
+            messages.error(request, "Password salah! Sertifikat tidak ditambahkan.")
+        else:
+            form.save()
+            messages.success(request, "Sertifikat baru berhasil ditambahkan!")
+            return redirect("main:show_certification")
 
     context = {
         "name": "Debora Putri Dion Simamora",
         "form": form,
+        "form_action": reverse("main:create_certification"),
+        "form_title": "Add New Certification",
+        "submit_label": "Tambah Sertifikat",
     }
-    return render(request, "projects_form.html", context)
+    return render(request, "certification_form.html", context)
 
-def get_projects_json(request):
-    title_query = request.GET.get("title", "").strip()
-    projects = Project.objects.all()
 
-    if title_query:
-        projects = projects.filter(title__icontains=title_query)
+def update_certification(request, id):
+    certification = get_object_or_404(Certification, pk=id)
+    form = CertificationForm(request.POST or None, instance=certification)
 
-    projects_json = serializers.serialize("json", projects)
-    return HttpResponse(projects_json, content_type="application/json")
-
-def show_projects(request):
-    json_response = get_projects_json(request)
-
-    projects = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    projects = [project.object for project in projects]
-    title_query = request.GET.get("title", "").strip()
+    if request.method == "POST" and form.is_valid():
+        if form.cleaned_data["password"] != os.getenv("FORM_PASSWORD"):
+            messages.error(request, "Password salah! Perubahan tidak disimpan.")
+        else:
+            form.save()
+            messages.success(request, "Sertifikat berhasil diperbarui!")
+            return redirect("main:show_certification")
 
     context = {
         "name": "Debora Putri Dion Simamora",
-        "project_list": projects,
-        "title_query": title_query,
+        "form": form,
+        "form_action": reverse("main:update_certification", args=[id]),
+        "form_title": "Edit Certification",
+        "submit_label": "Simpan Perubahan",
     }
-    return render(request, "project.html", context)
+    return render(request, "certification_form.html", context)
 
-def delete_project(request, project_id):
-    project = get_object_or_404(Project, pk=project_id)
+
+def delete_certification(request, id):
+    certification = get_object_or_404(Certification, pk=id)
 
     if request.method == "POST":
-        project.delete()
-        messages.success(request, "Project berhasil dihapus!")
-        return redirect("main:show_projects")
+        password_input = request.POST.get("password", "")
+        if password_input != os.getenv("FORM_PASSWORD"):
+            messages.error(request, "Password salah! Sertifikat tidak dihapus.")
+        else:
+            certification.delete()
+            messages.success(request, "Sertifikat berhasil dihapus!")
+        return redirect("main:show_certification")
 
-    return redirect("main:show_projects")
+    return redirect("main:show_certification")
+
+
+def get_certifications_json(request):
+    certifications = Certification.objects.all().order_by("-issue_date")
+    certifications_json = serializers.serialize("json", certifications)
+    return HttpResponse(certifications_json, content_type="application/json")
+
+
+def show_certification(request):
+    json_response = get_certifications_json(request)
+
+    certifications = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    certifications = [cert.object for cert in certifications]
+
+    context = {
+        "name": "Debora Putri Dion Simamora",
+        "certification_list": certifications,
+    }
+    return render(request, "certification.html", context)

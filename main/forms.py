@@ -1,52 +1,42 @@
-from django.forms import ModelForm, TextInput, Textarea, URLInput
+from django import forms
+from django.forms import ModelForm, TextInput, Textarea, URLInput, DateInput
 
-from main.models import Project
+from main.models import Certification
 
-class ProjectForm(ModelForm):
+class CertificationForm(ModelForm):
+    # Field password ini sengaja gak nyambung ke model Certification.
+    # Cuma dipakai buat ngecek di views.py, gak ikut kesimpen ke database.
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Masukkan password"}),
+        label="Password",
+        required=True,
+    )
+
     class Meta:
-        model = Project
+        model = Certification
         fields = [
             "title",
+            "issuer",
+            "issue_date",
+            "credential_id",
             "description",
-            "tech_stack",
-            "project_url",
-            "project_image_url",
+            "image",
         ]
 
         labels = {
-            "title": "Nama Proyek",
-            "description": "Deskripsi Proyek",
-            "tech_stack": "Teknologi yang Digunakan",
-            "project_url": "URL Proyek",
-            "project_image_url": "URL Gambar Proyek",
+            "title": "Nama Sertifikat",
+            "issuer": "Penerbit",
+            "issue_date": "Tanggal Terbit",
+            "credential_id": "ID Kredensial",
+            "description": "Deskripsi",
+            "image": "Nama File Gambar",
         }
 
         widgets = {
-            "title": TextInput(
-                attrs={
-                    "placeholder": "Portfolio Website",
-                    "maxlength": 255,
-                }
-            ),
-            "description": Textarea(
-                attrs={
-                    "placeholder": "Ceritakan Proyekmu",
-                    "rows": 3,
-                }
-            ),
-            "tech_stack": TextInput(
-                attrs={
-                    "placeholder": "Django, Python, HTML, CSS",
-                }
-            ),
-            "project_url": URLInput(
-                attrs={
-                    "placeholder": "https://github.com/kakBurhan/burhanquestv4",
-                }
-            ),
-            "project_image_url": URLInput(
-                attrs={
-                    "placeholder": "https://drive.google.com/thumbnail?id=...&sz=w1000",
-                }
-            ),
+            "title": TextInput(attrs={"placeholder": "TOEFL ITP", "maxlength": 255}),
+            "issuer": TextInput(attrs={"placeholder": "Educational Testing Service (ETS)"}),
+            "issue_date": DateInput(attrs={"type": "date"}),
+            "credential_id": TextInput(attrs={"placeholder": "SD-BB-0985769"}),
+            "description": Textarea(attrs={"placeholder": "Deskripsi singkat sertifikat (opsional)", "rows": 3}),
+            "image": TextInput(attrs={"placeholder": "toefl.jpg"}),
         }

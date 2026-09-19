@@ -1,0 +1,49 @@
+<button type="button"
+        class="button button-danger"
+        popovertarget="delete-cert-{{ cert.id }}"
+        aria-label="Hapus {{ cert.title }}"
+        title="Hapus sertifikat">
+    Hapus Sertifikat
+</button>
+<div id="delete-cert-{{ cert.id }}"
+     class="project-delete-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="delete-cert-title-{{ cert.id }}">
+    <button type="button"
+            class="project-delete-modal__backdrop"
+            popovertarget="delete-cert-{{ cert.id }}"
+            popovertargetaction="hide"
+            aria-label="Tutup konfirmasi hapus"></button>
+    <div class="project-delete-modal__content">
+        <button type="button"
+                class="project-delete-modal__close"
+                popovertarget="delete-cert-{{ cert.id }}"
+                popovertargetaction="hide"
+                aria-label="Tutup konfirmasi hapus">×</button>
+        <h2 id="delete-cert-title-{{ cert.id }}">Hapus Sertifikat?</h2>
+        <p>
+            Apakah Anda yakin ingin menghapus
+            <strong>{{ cert.title }}</strong>?
+        </p>
+        <form method="post" action="{% url 'main:delete_certification' cert.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="delete-password-{{ cert.id }}">Password</label>
+                <input type="password"
+                       name="password"
+                       id="delete-password-{{ cert.id }}"
+                       placeholder="Masukkan password"
+                       required>
+            </div>
+            <div class="project-delete-modal__actions">
+                <button type="button"
+                        class="button button-secondary"
+                        popovertarget="delete-cert-{{ cert.id }}"
+                        popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button button-danger">Ya, Hapus</button>
+            </div>
+        </form>
+    </div>
+</div>
