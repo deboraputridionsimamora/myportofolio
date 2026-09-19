@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0004_seed_certifications_and_experiences'),
+        ('main', '0003_certification_image'),
     ]
 
     operations = [

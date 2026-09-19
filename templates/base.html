@@ -13,17 +13,17 @@
 </head>
 <body>
   <header class="site-header">
-        <div class="container">
-            <a href="#profile" class="brand">{{ name }}</a>
-            <nav>
-                <a href="#profile">Profile</a>
-                <a href="#about">About</a>
-                <a href="{% url 'main:show_experience' %}">Experience</a>
-                <a href="{% url 'main:show_certification' %}">Certifications</a>
-                <a href="{% url 'main:show_projects' %}">Projects</a>
-            </nav>
-        </div>
-    </header>
+    <div class="container">
+        <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+        <nav>
+            <a href="{% url 'main:show_main' %}">Profile</a>
+            <a href="{% url 'main:show_main' %}#about">About</a>
+            <a href="{% url 'main:show_experience' %}">Experience</a>
+            <a href="{% url 'main:show_certification' %}">Certifications</a>
+            <a href="{% url 'main:show_projects' %}">Projects</a>
+        </nav>
+    </div>
+</header>
 
   {% block content %} {% endblock content %}
 
