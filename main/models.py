@@ -1,4 +1,6 @@
 import uuid
+
+from django.contrib.auth.models import User  # Tambahan Tutorial 4
 from django.db import models
 
 
@@ -35,6 +37,11 @@ class Certification(models.Model):
     credential_id = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     image = models.CharField(max_length=255, blank=True, null=True)
+    # Tambahan Tutorial 4: satu sertifikat bisa di-star banyak user,
+    # satu user bisa nge-star banyak sertifikat
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_certifications", blank=True
+    )
 
     def __str__(self):
         return self.title

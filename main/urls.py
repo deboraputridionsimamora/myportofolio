@@ -8,6 +8,10 @@ from main.views import (
     update_certification,
     delete_certification,
     get_certifications_json,
+    toggle_star,
+    register,
+    login_user,
+    logout_user,
 )
 
 app_name = "main"
@@ -19,5 +23,9 @@ urlpatterns = [
     path("certification/add/", create_certification, name="create_certification"),
     path("certification/<int:id>/update/", update_certification, name="update_certification"),
     path("certification/<int:id>/delete/", delete_certification, name="delete_certification"),
+    path("certification/<int:id>/star/", toggle_star, name="toggle_star"),
     path("api/certifications/", get_certifications_json, name="get_certifications_json"),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
 ]

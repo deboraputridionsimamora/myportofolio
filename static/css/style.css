@@ -72,6 +72,13 @@ h1, .brand {
     font-size: 0.95rem;
 }
 
+.site-header nav .nav-user {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
 .hero {
     position: relative;
     padding: 4.5rem 0 6rem;
@@ -607,14 +614,21 @@ h1, .brand {
         min-width: 0;
     }
 
+    /* Tutorial 4: flex-wrap + justify-content ditambah biar navbar yang jadi 6 item gak kepotong di HP */
     .site-header nav {
         flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 0.6rem;
         padding-top: 0.15rem;
     }
 
     .site-header nav a {
         font-size: 0.75rem;
+    }
+
+    .site-header nav .nav-user {
+        font-size: 0.8rem;
     }
 
     .hero-grid {
@@ -780,6 +794,28 @@ h1, .brand {
     color: #b42318;
     font-size: 0.85rem;
     margin-top: 0.35rem;
+}
+
+/* Tutorial 4: pesan sukses (misal "Akun berhasil dibuat") di halaman login */
+.form-message {
+    background-color: var(--pill-bg);
+    color: var(--accent-dark);
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Tutorial 4: petunjuk di bawah kolom form (aturan username & password) */
+.form-help {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+}
+
+.form-help ul {
+    padding-left: 1.2rem;
 }
 
 .button {
@@ -1004,4 +1040,29 @@ h1, .brand {
         width: 100%;
         text-align: center;
     }
+}
+
+
+/* Tutorial 4: tombol star di kartu sertifikat */
+.star-form {
+    display: inline;
+}
+
+.button-star {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--ink);
+    margin-top: 0.75rem;
+}
+
+.button-star.is-starred {
+    background: var(--accent);
+}
+
+.star-count {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    font-size: 0.8rem;
 }

@@ -11,11 +11,13 @@
                         <p class="exp-section-kicker">What i've earned along &amp; the way</p>
                         <h1>Licenses &amp; Certifications</h1>
                     </div>
-                    <a href="{% url 'main:create_certification' %}"
-                       class="button project-add-button">
-                        <span aria-hidden="true">+</span>
-                        Tambah Sertifikat
-                    </a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'main:create_certification' %}"
+                           class="button project-add-button">
+                            <span aria-hidden="true">+</span>
+                            Tambah Sertifikat
+                        </a>
+                    {% endif %}
                 </div>
 
                 <div class="cert-grid">
@@ -36,10 +38,23 @@
                                 <p class="cert-description">{{ cert.description }}</p>
                             {% endif %}
 
-                            <div class="project-actions">
-                                <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
-                                {% include "components/certification_delete_modal.html" with cert=cert %}
-                            </div>
+                            <!-- Tutorial 4: tombol star, tampil buat semua orang -->
+                            <form method="post" action="{% url 'main:toggle_star' cert.id %}" class="star-form">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="button button-star{% if user in cert.starred_by.all %} is-starred{% endif %}">
+                                    <span aria-hidden="true">★</span>
+                                    {% if user in cert.starred_by.all %}Unstar{% else %}Star{% endif %}
+                                    <span class="star-count">{{ cert.starred_by.count }}</span>
+                                </button>
+                            </form>
+
+                            {% if user.is_superuser %}
+                                <div class="project-actions">
+                                    <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
+                                    {% include "components/certification_delete_modal.html" with cert=cert %}
+                                </div>
+                            {% endif %}
                         </article>
                     {% empty %}
                         <p class="empty-state">
