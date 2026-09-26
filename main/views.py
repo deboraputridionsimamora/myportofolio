@@ -42,10 +42,17 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
-# Lapis 1: harus login. Belum login -> dialihkan ke halaman login.
+def is_user_editor(request):
+    # cek apakah akun yang login ini anggota Group "Editor"
+    # AnonymousUser (belum login) otomatis False, gak perlu dicek manual
+    if not request.user.is_authenticated:
+        return False
+    return request.user.groups.filter(name="Editor").exists()
+
+
+# Tambah: cuma superuser (pemilik). Editor TIDAK boleh menambah.
 @login_required(login_url="/login/")
 def create_certification(request):
-    # Lapis 2: harus pemilik (superuser). Login biasa doang -> 403 Forbidden.
     if not request.user.is_superuser:
         raise PermissionDenied
 
@@ -69,9 +76,10 @@ def create_certification(request):
     return render(request, "certification_form.html", context)
 
 
+# Edit: superuser ATAU editor boleh. Ini bedanya sama create/delete.
 @login_required(login_url="/login/")
 def update_certification(request, id):
-    if not request.user.is_superuser:
+    if not (request.user.is_superuser or is_user_editor(request)):
         raise PermissionDenied
 
     certification = get_object_or_404(Certification, pk=id)
@@ -95,6 +103,7 @@ def update_certification(request, id):
     return render(request, "certification_form.html", context)
 
 
+# Hapus: cuma superuser. Editor TIDAK boleh menghapus.
 @login_required(login_url="/login/")
 def delete_certification(request, id):
     if not request.user.is_superuser:
@@ -114,15 +123,12 @@ def delete_certification(request, id):
     return redirect("main:show_certification")
 
 
-# Tutorial 4: fitur star. Cukup login (gak perlu superuser), semua pengguna
-# terdaftar boleh star/unstar sertifikat.
+# Star: cukup login (siapa aja yang punya akun), gak perlu superuser atau editor
 @login_required(login_url="/login/")
 def toggle_star(request, id):
     certification = get_object_or_404(Certification, pk=id)
 
     if request.method == "POST":
-        # kalau user ini udah pernah star, klik lagi = batalin star
-        # kalau belum pernah, klik = kasih star
         if request.user in certification.starred_by.all():
             certification.starred_by.remove(request.user)
         else:
@@ -148,9 +154,31 @@ def show_certification(request):
     )
     certifications = [cert.object for cert in certifications]
 
+    # Fitur kreativitas: urutkan berdasarkan pilihan lewat parameter ?sort=
+    # di URL. "stars" = paling banyak di-star duluan, selain itu = terbaru duluan.
+    sort_option = request.GET.get("sort", "terbaru")
+    if sort_option == "stars":
+        certifications = sorted(
+            certifications,
+            key=lambda cert: cert.starred_by.count(),
+            reverse=True,
+        )
+    else:
+        sort_option = "terbaru"
+        certifications = sorted(
+            certifications,
+            key=lambda cert: cert.issue_date,
+            reverse=True,
+        )
+
     context = {
         "name": "Debora Putri Dion Simamora",
         "certification_list": certifications,
+        # dikirim ke template biar tombol Tambah/Edit/Hapus bisa disembunyiin
+        # sesuai peran yang login
+        "is_editor": is_user_editor(request),
+        # dikirim ke template biar tombol sort yang lagi aktif bisa ditandain
+        "sort_option": sort_option,
     }
     return render(request, "certification.html", context)
 

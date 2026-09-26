@@ -20,6 +20,17 @@
                     {% endif %}
                 </div>
 
+                <div class="sort-controls">
+                    <a href="{% url 'main:show_certification' %}?sort=terbaru"
+                       class="button-sort{% if sort_option == 'terbaru' %} is-active{% endif %}">
+                        Newest
+                    </a>
+                    <a href="{% url 'main:show_certification' %}?sort=stars"
+                       class="button-sort{% if sort_option == 'stars' %} is-active{% endif %}">
+                        Most Starred
+                    </a>
+                </div>
+
                 <div class="cert-grid">
                     {% for cert in certification_list %}
                         <article class="cert-card">
@@ -38,23 +49,25 @@
                                 <p class="cert-description">{{ cert.description }}</p>
                             {% endif %}
 
-                            <!-- Tutorial 4: tombol star, tampil buat semua orang -->
                             <form method="post" action="{% url 'main:toggle_star' cert.id %}" class="star-form">
                                 {% csrf_token %}
                                 <button type="submit"
-                                        class="button button-star{% if user in cert.starred_by.all %} is-starred{% endif %}">
+                                        class="button button-star{% if user in cert.starred_by.all %} is-starred{% endif %}"
+                                        title="{% if cert.starred_by.all %}Starred by {{ cert.starred_by.all|join:', ' }}{% else %}Be the first to star this{% endif %}">
                                     <span aria-hidden="true">★</span>
                                     {% if user in cert.starred_by.all %}Unstar{% else %}Star{% endif %}
                                     <span class="star-count">{{ cert.starred_by.count }}</span>
                                 </button>
                             </form>
 
-                            {% if user.is_superuser %}
-                                <div class="project-actions">
+                            <div class="project-actions">
+                                {% if user.is_superuser or is_editor %}
                                     <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
+                                {% endif %}
+                                {% if user.is_superuser %}
                                     {% include "components/certification_delete_modal.html" with cert=cert %}
-                                </div>
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </article>
                     {% empty %}
                         <p class="empty-state">

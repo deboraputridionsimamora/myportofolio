@@ -22,6 +22,9 @@ Website memiliki beberapa fitur utama:
 * **Responsive Design:** layout website disesuaikan agar tetap rapi dan nyaman digunakan pada desktop maupun mobile.
 * **Experience:** menampilkan pengalaman organisasi dan volunteering pada halaman tersendiri (My Journey), terpisah dari halaman profil. Setiap kategori menggunakan animasi marquee dengan arah yang berbeda dan foto dokumentasi sebagai latar kartu.
 * **Licenses & Certifications:** menampilkan sertifikat dan penghargaan yang pernah saya terima, masing-masing dengan gambar sertifikat, nama, penerbit, tanggal terbit, nomor kredensial (jika ada), dan deskripsi singkat. Data diambil dari database menggunakan pola Model-View-Template.
+* **Authentication & Authorization:** pengguna dapat membuat akun (Register), login, dan logout menggunakan sistem autentikasi bawaan Django. Status login ditampilkan di navbar, beserta waktu login terakhir yang disimpan lewat cookie. Akses terhadap fitur Create, Update, dan Delete pada Certification dibatasi berdasarkan 4 peran: Visitor (hanya baca), Regular User (baca + star), Editor (baca + star + update), dan Owner/Superuser (akses penuh).
+* **Star Feature:** pengguna yang sudah login dapat memberi atau membatalkan star pada sebuah sertifikat. Jumlah star dan status star pengguna ditampilkan secara real-time, lengkap dengan tooltip yang menunjukkan siapa saja yang sudah memberi star.
+* **Sort Certifications:** pengunjung dapat mengurutkan daftar sertifikat berdasarkan yang terbaru (Newest) atau yang paling banyak di-star (Most Starred).
 
 Seluruh interaktivitas pada implementasi akhir dibuat tanpa JavaScript. Modal menggunakan teknik CSS `:target`, sedangkan animasi scroll menggunakan `animation-timeline: view()`. Saya juga menggunakan `@supports` sebagai fallback untuk browser yang belum mendukung fitur tersebut.
 
@@ -38,6 +41,12 @@ pip install -r requirements.txt
 python manage.py runserver
 ```
 5. Buka `http://localhost:8000/` pada browser.
+6. Buat file `.env` di root folder project, isi dengan:
+```bash
+FORM_PASSWORD=pinibiargabisaasalotakatik715
+```
+File ini **tidak ikut di-push ke GitHub** (sudah masuk `.gitignore`), jadi setiap yang mau menjalankan project ini secara lokal perlu membuat sendiri file `.env` miliknya dengan password bebas.
+7. Untuk mencoba role **Editor**, buat akun baru melalui halaman Register, lalu buka `/admin/`, login sebagai superuser, masuk ke bagian **Groups**, buat/pilih group bernama `Editor`, dan tambahkan akun tersebut ke group itu.
 
 ## Progres Mingguan
 
@@ -86,6 +95,22 @@ Fitur Update merupakan hal baru yang belum diajarkan di Tutorial 03 (yang hanya 
 Setelah checklist utama tugas selesai, saya menghapus section Projects yang sebelumnya dibuat sebagai latihan di Tutorial 03, karena portofolio ini sudah memiliki section Certifications yang lebih relevan dan sudah menerapkan mekanisme yang sama. Proses ini melibatkan penghapusan model, view, form, url, dan template terkait Projects, serta migrasi terkait yang perlu ditelusuri satu per satu supaya tidak meninggalkan referensi yang rusak.
 
 Di luar ketentuan minimum tugas, saya juga menambahkan proteksi sederhana berupa field password pada form Create, Update, dan Delete Certification. Password disimpan di `.env` sebagai `FORM_PASSWORD` dan dicocokkan secara manual di view sebelum data disimpan atau dihapus. Ini bukan sistem autentikasi sesungguhnya, melainkan langkah antisipasi sementara mengingat konsep Authentication, Session, dan Cookies belum diajarkan sampai tutorial ini, sehingga sebenarnya siapa pun yang mengetahui URL dapat menambah, mengubah, atau menghapus data pada portofolio saya.
+
+### Tutorial 04
+
+Pada Tutorial 04, saya mempelajari konsep Authentication, Session, dan Cookies di Django. Saya menerapkan Register, Login, dan Logout menggunakan `UserCreationForm` dan `AuthenticationForm` bawaan Django, menampilkan status login pengguna di navbar, serta menyimpan waktu login terakhir menggunakan cookie `last_login` yang di-set saat login dan dihapus saat logout. Saya juga menambahkan pembatasan akses sederhana pada fitur Create, Update, dan Delete Certification menggunakan `@login_required` dan pengecekan `request.user.is_superuser`, sehingga hanya pemilik portofolio yang bisa mengakses fitur tersebut, serta menambahkan field `starred_by` (`ManyToManyField` ke model `User`) pada model `Certification` beserta view `toggle_star` untuk memberi dan membatalkan star.
+
+Saat pertama kali mengetes fitur ini dengan akun lain, saya sempat bingung karena tombol Add/Edit/Delete jadi tidak muncul sama sekali, padahal saya pikir pembatasannya cukup lewat password saja seperti yang saya tambahkan di Assignment 3. Setelah ditelusuri, saya baru menyadari bahwa Tutorial 04 memang mengharuskan pembatasan di level peran/role, bukan hanya di level password, sehingga keduanya perlu berjalan berdampingan: role menentukan siapa yang boleh melihat dan mengakses tombolnya, sedangkan password tetap menjadi lapisan tambahan seperti sebelumnya.
+
+### Individual Assignment 4
+
+Pada Individual Assignment 4, saya melanjutkan pola autentikasi dari Tutorial 04 dengan menambahkan peran baru bernama Editor, yang berada di antara Regular User dan Owner (superuser). Peran ini saya implementasikan menggunakan Django Group yang dibuat dan di-assign melalui halaman `/admin/`, kemudian dicek di view menggunakan `request.user.groups.filter(name="Editor").exists()`. Saya menerapkan pengecekan ini di seluruh view yang relevan sehingga Visitor diarahkan ke halaman login saat mencoba melakukan aksi yang butuh akun, Regular User bisa membaca data dan memberi/membatalkan star tetapi mendapat `403 Forbidden` saat mencoba create, update, atau delete, Editor memiliki hak yang sama seperti Regular User ditambah bisa membuka dan menyimpan form Update, tetapi tetap mendapat `403 Forbidden` saat mencoba create atau delete, dan Owner memiliki akses penuh ke semua aksi. Tombol Tambah, Edit, dan Delete pada template `certification.html` juga saya sembunyikan secara kondisional sesuai peran yang sedang login.
+
+Saya sempat mempertimbangkan untuk menghapus field password `FORM_PASSWORD` dari Assignment 3 karena merasa sudah tidak relevan setelah ada role-based access control, namun setelah berkonsultasi dengan asisten dosen, saya mendapat konfirmasi bahwa field tersebut boleh tetap dipertahankan sebagai lapisan tambahan semacam "2FA sederhana", sehingga saya memutuskan untuk tidak menghapusnya. Untuk memastikan seluruh logika otorisasi ini benar, saya menambahkan automated test baru di `main/tests.py` yang mencakup keempat peran tersebut beserta fitur Create/Update/Delete/JSON dari Assignment 3, dengan `FORM_PASSWORD` yang dibaca lewat `os.getenv()` alih-alih ditulis langsung di kode, mengingat repository ini bersifat publik.
+
+Ketika memeriksa ulang checklist "API Integrity & Data Security", saya menyadari bahwa penambahan field `starred_by` pada model `Certification` membuat JSON endpoint `/api/certifications/` ikut menampilkan daftar pengguna yang memberi star pada tiap sertifikat, padahal ini tidak seharusnya ada di endpoint tersebut. Saya kemudian memperbaikinya dengan menyebutkan secara eksplisit field mana saja yang boleh ikut di-serialize pada `get_certifications_json`, sehingga output JSON-nya kembali seperti pada Assignment 3, sementara fitur star di halaman Certifications tetap berjalan normal karena datanya diambil langsung dari database, bukan dari hasil serialize tersebut.
+
+Di luar kebutuhan minimum tugas, saya menambahkan dua fitur kreativitas pada halaman Certifications, yaitu tooltip pada tombol star yang menampilkan daftar nama pengguna yang sudah memberi star, dan kontrol sort untuk mengurutkan sertifikat berdasarkan yang terbaru atau yang paling banyak di-star, menggunakan query parameter URL tanpa JavaScript.
 
 ## Pertanyaan Reflektif
 
@@ -294,3 +319,59 @@ Saya juga menentukan sendiri untuk menambahkan proteksi password sederhana sebag
 ### Keterbatasan AI dan Pemahaman Saya
 
 Pada tutorial ini, saya menyadari bahwa proses refactor kode lama ternyata lebih rawan menimbulkan error dibanding menulis kode baru dari nol, karena ada bagian-bagian yang mudah terlewat, seperti berkas HTML yang belum ikut di-extend, migrasi yang saling bergantung, atau referensi ke model yang sudah dihapus namun masih tertinggal di berkas lain (seperti `admin.py`). Claude membantu saya menelusuri error tersebut satu per satu, tetapi saya tetap perlu memeriksa kembali setiap berkas secara manual untuk memastikan tidak ada bagian lain yang tertinggal. Saya juga menyadari bahwa proteksi password yang saya tambahkan bukan solusi keamanan yang sesungguhnya, dan saya perlu mempelajari konsep Authentication, Session, dan Cookies lebih lanjut di tutorial-tutorial berikutnya untuk benar-benar membatasi akses ke fitur Create, Update, dan Delete pada portofolio saya.
+
+## Update AI Disclosure: Tutorial 04 & Individual Assignment 4
+
+Pada Tutorial 04 dan Individual Assignment 4, saya menggunakan Claude terutama untuk memahami konsep Authentication, Session, Cookies, dan Role-Based Access Control, karena ini pertama kalinya saya menerapkan sistem login sungguhan pada project ini, serta untuk membantu menelusuri satu kejanggalan logika otorisasi dan satu celah keamanan pada JSON endpoint yang saya temukan sendiri saat menguji ulang checklist tugas.
+
+### Bagian yang Dibantu AI
+
+Claude membantu menjelaskan cara kerja `UserCreationForm`, `AuthenticationForm`, `login()`, `logout()`, serta perbedaan konsep session dan cookie, dan membantu menuliskan kode untuk view `register`, `login_user`, `logout_user`, `toggle_star`, serta penambahan field `starred_by` pada model `Certification`. Untuk Assignment 4, Claude membantu menjelaskan cara kerja Django Group untuk peran Editor, membantu menyusun logic pengecekan keempat peran di view, serta membantu menuliskan automated test baru (`AuthorizationTest`, `CertificationCRUDTest`). Claude juga membantu saya memahami kenapa JSON endpoint bisa ikut membocorkan data `starred_by`, dan menjelaskan bahwa perbaikannya cukup dengan menyebutkan field yang boleh di-serialize secara eksplisit, tanpa mengganggu fitur star yang sudah berjalan.
+
+### Bagian yang Saya Kerjakan dan Putuskan Sendiri
+
+Sebelum bertanya ke Claude, saya membaca dulu modul Tutorial 04 di website PBP dan mencoba mengikuti langkah-langkahnya sendiri di VS Code, seperti membuat `register.html` dan `login.html`, menambahkan routing baru di `main/urls.py`, serta menuliskan sendiri view `register`, `login_user`, dan `logout_user` berdasarkan contoh di modul, sebelum menerapkan pola yang sama ke bagian Certification milik saya sendiri yang strukturnya tidak persis sama dengan contoh di modul. Saya juga yang menguji sendiri satu per satu perilaku setiap peran secara manual di browser menggunakan beberapa akun berbeda yang saya buat sendiri, sebelum menyadari ada kejanggalan pada logika otorisasi awal dan baru menanyakannya ke Claude. Pembuatan Group `Editor` melalui halaman `/admin/` beserta penambahan akun ke group tersebut juga saya lakukan sendiri, mengikuti hint yang diberikan pada soal tugas.
+
+Saya memutuskan sendiri untuk berkonsultasi dengan asisten dosen mengenai field `FORM_PASSWORD`, dan setelah mendapat konfirmasi boleh dipertahankan, saya memutuskan untuk tidak menghapusnya. Saya juga yang menemukan sendiri bahwa JSON endpoint ikut membocorkan data `starred_by` saat memeriksa ulang checklist "API Integrity & Data Security" pada soal tugas, sebelum menanyakannya ke Claude untuk memastikan cara memperbaikinya tanpa merusak fitur star yang sudah berjalan. Untuk fitur kreativitas, saya sendiri yang memilih dua fitur yang ingin ditambahkan (tooltip star dan sort) dari beberapa opsi yang didiskusikan, dengan pertimbangan keduanya bisa diimplementasikan murni menggunakan Django template dan query parameter URL, konsisten dengan pendekatan HTML5/CSS3-first yang saya pakai sejak Tutorial 1. Sebelum melakukan commit, saya selalu menjalankan `python manage.py test` dan mengecek ulang tampilan tiap peran secara manual di browser.
+
+### AI Chat / Prompting Log
+
+1. **Memahami dasar Authentication di Tutorial 04**
+
+   > "Saya ingin mengerjakan Tutorial 04 tentang Authentication, Session, dan Cookies. Bisa dijelaskan dulu konsep dasarnya sebelum saya mulai coding sambil mengikuti modulnya di website PBP?"
+
+   Digunakan untuk memahami alur register, login, logout, session, dan cookie sebelum mulai mengetik kode sendiri di VS Code.
+
+2. **Menemukan kejanggalan logika otorisasi**
+
+   > "Saya perhatikan tombol Tambah/Edit/Hapus jadi tidak muncul sama sekali untuk akun lain, padahal sebelumnya saya kira cukup dibatasi lewat password saja. Apakah memang seharusnya begitu?"
+
+   Digunakan setelah saya menguji sendiri dengan akun lain di browser dan menemukan bahwa logic pengecekan role di view dan template perlu disesuaikan.
+
+3. **Menentukan nasib field password lama**
+
+   > "Field password `FORM_PASSWORD` ini kan fitur tambahan dari Assignment 3 saya. Sekarang sudah ada role-based access control, apakah sebaiknya saya hapus atau tetap dipertahankan?"
+
+   Digunakan untuk mendiskusikan opsi mempertahankan atau menghapus `FORM_PASSWORD`, sebelum akhirnya saya memutuskan berkonsultasi dulu dengan asisten dosen.
+
+4. **Menambahkan automated test untuk role**
+
+   > "Logic role-nya sudah benar. Bisa dibantu buatkan automated test di `tests.py` untuk memastikan keempat peran ini berjalan sesuai fungsinya masing-masing?"
+
+   Digunakan untuk meminta dibuatkan automated test yang mencakup keempat peran beserta fitur CRUD dari Assignment 3.
+
+5. **Menemukan kebocoran data di JSON endpoint**
+
+   > "Saya perhatikan JSON di `/api/certifications/` sekarang ikut menampilkan daftar user yang nge-star. Apakah ini termasuk masalah keamanan, dan bagaimana cara memperbaikinya tanpa merusak fitur star di halaman Certifications?"
+
+   Digunakan setelah saya memeriksa ulang checklist "API Integrity & Data Security" dan menyadari ada field baru yang ikut bocor ke JSON.
+
+6. **Memilih fitur kreativitas**
+
+   > "Dari beberapa ide fitur tambahan yang ditawarkan, saya mau pakai yang tooltip star sama yang sort itu saja."
+
+   Digunakan untuk memilih dua fitur tambahan (tooltip star dan sort) dari beberapa opsi yang ditawarkan.
+
+### Keterbatasan AI dan Pemahaman Saya
+
+Sama seperti tutorial-tutorial sebelumnya, Claude tidak dapat menjalankan project atau melihat tampilan browser saya secara langsung, sehingga saya perlu menjelaskan atau mengirimkan pesan error yang saya temukan sendiri untuk ditelusuri bersama. Saya juga menyadari bahwa memahami role-based access control butuh lebih dari sekadar menyalin kode: saya perlu benar-benar menguji sendiri setiap peran satu per satu di browser dengan akun berbeda untuk memastikan logikanya sudah benar. Temuan soal kebocoran data di JSON endpoint juga mengajarkan saya bahwa menambahkan field baru ke model bisa punya efek samping yang tidak terduga pada bagian lain seperti API, sehingga saya perlu memeriksa ulang setiap checklist tugas secara menyeluruh, bukan hanya memastikan fitur utamanya berjalan. Saya juga belajar pentingnya tidak menyimpan secret seperti `FORM_PASSWORD` langsung di dalam kode yang akan di-push ke repository publik, sehingga saya menggunakan `.env` dan `os.getenv()` baik di `views.py` maupun di `tests.py`.
