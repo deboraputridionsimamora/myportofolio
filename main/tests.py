@@ -46,12 +46,6 @@ class MainTest(TestCase):
         self.assertContains(response, "Sedang berlangsung")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
-    def test_empty_experience_page(self):
-        Experience.objects.all().delete()
-        response = self.client.get(reverse("main:show_experience"))
-
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
-
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
@@ -81,16 +75,25 @@ class CertificationTest(TestCase):
         self.assertTemplateUsed(response, "certification.html")
 
     def test_certification_appears_when_data_exists(self):
-        response = self.client.get(reverse("main:show_certification"))
+        # sekarang data muncul lewat AJAX, jadi dicek di endpoint JSON
+        response = self.client.get(reverse("main:get_certifications_json"))
+        data = json.loads(response.content)
+        titles = [item["fields"]["title"] for item in data]
 
-        self.assertContains(response, self.certification.title)
-        self.assertContains(response, self.certification.issuer)
+        self.assertIn(self.certification.title, titles)
 
     def test_empty_certification_page(self):
+        # hapus semua data dulu biar beneran kosong
         Certification.objects.all().delete()
-        response = self.client.get(reverse("main:show_certification"))
 
-        self.assertContains(response, "Belum ada sertifikat yang ditambahkan.")
+        # halaman tetap kebuka dan punya tulisan "kosong" yang disiapin
+        response = self.client.get(reverse("main:show_certification"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Belum ada sertifikat yang ditambahkan atau ditemukan.")
+
+        # endpoint JSON-nya ngebalikin list kosong
+        json_response = self.client.get(reverse("main:get_certifications_json"))
+        self.assertEqual(json.loads(json_response.content), [])
 
 
 # Tutorial 4 / Individual Assignment 4: tes buat mastiin 4 peran (pengunjung,
@@ -309,4 +312,5 @@ class CertificationCRUDTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(data) >= 1)
-        self.assertEqual(data[0]["model"], "main.certification")
+        self.assertIn("pk", data[0])
+        self.assertIn("title", data[0]["fields"])

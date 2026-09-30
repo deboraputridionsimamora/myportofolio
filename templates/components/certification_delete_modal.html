@@ -1,48 +1,36 @@
-<button type="button"
-        class="button button-danger"
-        popovertarget="delete-cert-{{ cert.id }}"
-        aria-label="Hapus {{ cert.title }}"
-        title="Hapus sertifikat">
-    Hapus Sertifikat
-</button>
-<div id="delete-cert-{{ cert.id }}"
+<div id="delete-certification-modal"
      class="project-delete-modal"
      popover="auto"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="delete-cert-title-{{ cert.id }}">
+     aria-labelledby="delete-certification-modal-title">
     <button type="button"
             class="project-delete-modal__backdrop"
-            popovertarget="delete-cert-{{ cert.id }}"
+            popovertarget="delete-certification-modal"
             popovertargetaction="hide"
             aria-label="Tutup konfirmasi hapus"></button>
+
     <div class="project-delete-modal__content">
         <button type="button"
                 class="project-delete-modal__close"
-                popovertarget="delete-cert-{{ cert.id }}"
+                popovertarget="delete-certification-modal"
                 popovertargetaction="hide"
                 aria-label="Tutup konfirmasi hapus">×</button>
-        <h2 id="delete-cert-title-{{ cert.id }}">Hapus Sertifikat?</h2>
-        <p>
-            Apakah Anda yakin ingin menghapus
-            <strong>{{ cert.title }}</strong>?
-        </p>
-        <form method="post" action="{% url 'main:delete_certification' cert.id %}">
+
+        <h2 id="delete-certification-modal-title">Hapus Sertifikat</h2>
+        <p>Masukkan password untuk menghapus sertifikat ini. Aksi ini tidak bisa dibatalkan.</p>
+
+        <!-- action-nya sengaja kosong, nanti diisi JavaScript -->
+        <form id="delete-certification-form" method="post" action="">
             {% csrf_token %}
             <div class="form-group">
-                <label for="delete-password-{{ cert.id }}">Password</label>
-                <input type="password"
-                       name="password"
-                       id="delete-password-{{ cert.id }}"
-                       placeholder="Masukkan password"
-                       required>
+                <label for="delete-certification-password">Password</label>
+                <input type="password" id="delete-certification-password" name="password" required>
             </div>
             <div class="project-delete-modal__actions">
-                <button type="button"
-                        class="button button-secondary"
-                        popovertarget="delete-cert-{{ cert.id }}"
-                        popovertargetaction="hide">Batal</button>
-                <button type="submit" class="button button-danger">Ya, Hapus</button>
+                <button type="button" class="button button-secondary"
+                        popovertarget="delete-certification-modal" popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button button-danger">Hapus Sertifikat</button>
             </div>
         </form>
     </div>

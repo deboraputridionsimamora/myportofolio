@@ -5,18 +5,19 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.core import serializers
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.db.models import Count
+from django.http import JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from main.models import Experience, Certification
 from main.forms import CertificationForm
 
 
 def show_main(request):
-    # baca cookie last_login dari browser, kalau gak ada pakai tulisan default
+    # baca cookie last_login, kalau gak ada pakai tulisan default
     last_login = request.COOKIES.get(
         "last_login", "Belum ada sesi login / Cookie tidak ditemukan"
     )
@@ -42,15 +43,13 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
+# cek apakah user masuk group Editor (dari Tugas 4)
 def is_user_editor(request):
-    # cek apakah akun yang login ini anggota Group "Editor"
-    # AnonymousUser (belum login) otomatis False, gak perlu dicek manual
     if not request.user.is_authenticated:
         return False
     return request.user.groups.filter(name="Editor").exists()
 
 
-# Tambah: cuma superuser (pemilik). Editor TIDAK boleh menambah.
 @login_required(login_url="/login/")
 def create_certification(request):
     if not request.user.is_superuser:
@@ -76,7 +75,36 @@ def create_certification(request):
     return render(request, "certification_form.html", context)
 
 
-# Edit: superuser ATAU editor boleh. Ini bedanya sama create/delete.
+# Tutorial 5: versi AJAX dari create_certification, balesnya JSON bukan halaman
+# sengaja gak pakai @login_required, soalnya itu nge-redirect ke halaman login
+# dan fetch jadi dapet HTML, bukan JSON
+@require_POST
+def create_certification_ajax(request):
+    # user belum login juga is_superuser-nya False, jadi ketolak di sini
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menambahkan sertifikat."},
+            status=403,
+        )
+
+    form = CertificationForm(request.POST)
+    if form.is_valid():
+        # password tambahan dari Tugas 3 tetap dicek
+        if form.cleaned_data["password"] != os.getenv("FORM_PASSWORD"):
+            return JsonResponse(
+                {"message": "Password salah! Sertifikat tidak ditambahkan."},
+                status=400,
+            )
+        certification = form.save()
+        return JsonResponse(
+            {"message": "Sertifikat berhasil ditambahkan.", "pk": certification.id},
+            status=201,
+        )
+
+    # kalau form gak valid, kirim pesan error tiap field
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+
 @login_required(login_url="/login/")
 def update_certification(request, id):
     if not (request.user.is_superuser or is_user_editor(request)):
@@ -103,7 +131,6 @@ def update_certification(request, id):
     return render(request, "certification_form.html", context)
 
 
-# Hapus: cuma superuser. Editor TIDAK boleh menghapus.
 @login_required(login_url="/login/")
 def delete_certification(request, id):
     if not request.user.is_superuser:
@@ -118,17 +145,16 @@ def delete_certification(request, id):
         else:
             certification.delete()
             messages.success(request, "Sertifikat berhasil dihapus!")
-        return redirect("main:show_certification")
 
     return redirect("main:show_certification")
 
 
-# Star: cukup login (siapa aja yang punya akun), gak perlu superuser atau editor
 @login_required(login_url="/login/")
 def toggle_star(request, id):
     certification = get_object_or_404(Certification, pk=id)
 
     if request.method == "POST":
+        # udah pernah star -> unstar, belum pernah -> star
         if request.user in certification.starred_by.all():
             certification.starred_by.remove(request.user)
         else:
@@ -137,60 +163,73 @@ def toggle_star(request, id):
     return redirect("main:show_certification")
 
 
+# Tutorial 5: JSON dirakit manual biar bisa nyelipin info star
+# punya user yang lagi login. Bisa juga ?title= (search) dan ?sort= (urutan)
 def get_certifications_json(request):
-    certifications = Certification.objects.all().order_by("-issue_date")
-    certifications_json = serializers.serialize(
-        "json", certifications, use_natural_foreign_keys=True
-    )
-    return HttpResponse(certifications_json, content_type="application/json")
-
-
-def show_certification(request):
-    json_response = get_certifications_json(request)
-
-    certifications = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    certifications = [cert.object for cert in certifications]
-
-    # Fitur kreativitas: urutkan berdasarkan pilihan lewat parameter ?sort=
-    # di URL. "stars" = paling banyak di-star duluan, selain itu = terbaru duluan.
+    title_query = request.GET.get("title", "").strip()
     sort_option = request.GET.get("sort", "terbaru")
-    if sort_option == "stars":
-        certifications = sorted(
-            certifications,
-            key=lambda cert: cert.starred_by.count(),
-            reverse=True,
-        )
-    else:
+    if sort_option not in ("terbaru", "stars"):
         sort_option = "terbaru"
-        certifications = sorted(
-            certifications,
-            key=lambda cert: cert.issue_date,
-            reverse=True,
-        )
+
+    certifications = Certification.objects.prefetch_related("starred_by").annotate(
+        star_total=Count("starred_by")
+    )
+
+    if title_query:
+        certifications = certifications.filter(title__icontains=title_query)
+
+    if sort_option == "stars":
+        certifications = certifications.order_by("-star_total", "-issue_date")
+    else:
+        certifications = certifications.order_by("-issue_date")
+
+    data = []
+    for cert in certifications:
+        starred_users = cert.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
+        data.append({
+            "pk": cert.id,
+            "fields": {
+                "title": cert.title,
+                "issuer": cert.issuer,
+                "issue_date": cert.issue_date.strftime("%B %Y"),
+                "credential_id": cert.credential_id or "",
+                "description": cert.description or "",
+                "image": cert.image or "",
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+# Tutorial 5: sekarang cuma render kerangka halaman,
+# kartu sertifikatnya diisi JavaScript lewat AJAX
+def show_certification(request):
+    title_query = request.GET.get("title", "").strip()
+    sort_option = request.GET.get("sort", "terbaru")
+    if sort_option not in ("terbaru", "stars"):
+        sort_option = "terbaru"
 
     context = {
         "name": "Debora Putri Dion Simamora",
-        "certification_list": certifications,
-        # dikirim ke template biar tombol Tambah/Edit/Hapus bisa disembunyiin
-        # sesuai peran yang login
-        "is_editor": is_user_editor(request),
-        # dikirim ke template biar tombol sort yang lagi aktif bisa ditandain
+        "title_query": title_query,
         "sort_option": sort_option,
+        "is_editor": is_user_editor(request),
+        "form": CertificationForm(),  # form kosong buat ditampilin di modal
     }
     return render(request, "certification.html", context)
 
 
-# ===== Tutorial 4: autentikasi (register, login, logout) =====
-
 def register(request):
-    # kalau baru buka halaman (GET) formnya kosong, kalau habis submit (POST) formnya berisi data
     form = UserCreationForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        form.save()  # bikin akun baru, password otomatis di-hash
+        form.save()
         messages.success(request, "Akun berhasil dibuat. Silakan login.")
         return redirect("main:login")
 
@@ -205,12 +244,10 @@ def login_user(request):
     form = AuthenticationForm(request, data=request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        user = form.get_user()  # akun yang username & password-nya cocok
+        user = form.get_user()
         login(request, user)
 
-        # redirect-nya disimpan dulu ke variabel response, biar bisa ditempelin cookie
         response = redirect("main:show_main")
-        # cookie last_login isinya waktu sekarang, format tahun-bulan-tanggal jam:menit:detik
         response.set_cookie(
             "last_login", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
@@ -224,8 +261,8 @@ def login_user(request):
 
 
 def logout_user(request):
-    logout(request)  # hapus catatan login di session
+    logout(request)
 
     response = redirect("main:show_main")
-    response.delete_cookie("last_login")  # suruh browser buang cookie last_login
+    response.delete_cookie("last_login")
     return response

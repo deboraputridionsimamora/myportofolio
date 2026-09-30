@@ -12,70 +12,318 @@
                         <h1>Licenses &amp; Certifications</h1>
                     </div>
                     {% if user.is_superuser %}
-                        <a href="{% url 'main:create_certification' %}"
-                           class="button project-add-button">
+                        <!-- Tutorial 5: sekarang buka modal, bukan pindah halaman -->
+                        <button type="button"
+                                class="button project-add-button"
+                                popovertarget="add-certification-modal">
                             <span aria-hidden="true">+</span>
                             Tambah Sertifikat
-                        </a>
+                        </button>
                     {% endif %}
                 </div>
 
+                <form id="certification-search-form" class="project-search">
+                    <input type="search"
+                           id="search-input"
+                           name="title"
+                           value="{{ title_query }}"
+                           placeholder="Cari berdasarkan nama sertifikat"
+                           class="project-search__input"
+                           aria-label="Cari berdasarkan nama sertifikat">
+                    <button type="submit" class="button">Cari</button>
+                </form>
+
                 <div class="sort-controls">
-                    <a href="{% url 'main:show_certification' %}?sort=terbaru"
-                       class="button-sort{% if sort_option == 'terbaru' %} is-active{% endif %}">
-                        Newest
-                    </a>
-                    <a href="{% url 'main:show_certification' %}?sort=stars"
-                       class="button-sort{% if sort_option == 'stars' %} is-active{% endif %}">
-                        Most Starred
-                    </a>
+                    <button type="button" class="button-sort" id="sort-terbaru">Newest</button>
+                    <button type="button" class="button-sort" id="sort-stars">Most Starred</button>
                 </div>
 
-                <div class="cert-grid">
-                    {% for cert in certification_list %}
-                        <article class="cert-card">
-                            {% if cert.image %}
-                                <img class="cert-image" src="/static/img/certifications/{{ cert.image }}" alt="{{ cert.title }}">
-                            {% endif %}
-                            <h2>{{ cert.title }}</h2>
-                            <p class="cert-issuer">{{ cert.issuer }}</p>
-                            <p class="cert-date">Issued {{ cert.issue_date|date:"F Y" }}</p>
-
-                            {% if cert.credential_id %}
-                                <p class="cert-credential">Credential ID: {{ cert.credential_id }}</p>
-                            {% endif %}
-
-                            {% if cert.description %}
-                                <p class="cert-description">{{ cert.description }}</p>
-                            {% endif %}
-
-                            <form method="post" action="{% url 'main:toggle_star' cert.id %}" class="star-form">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="button button-star{% if user in cert.starred_by.all %} is-starred{% endif %}"
-                                        title="{% if cert.starred_by.all %}Starred by {{ cert.starred_by.all|join:', ' }}{% else %}Be the first to star this{% endif %}">
-                                    <span aria-hidden="true">★</span>
-                                    {% if user in cert.starred_by.all %}Unstar{% else %}Star{% endif %}
-                                    <span class="star-count">{{ cert.starred_by.count }}</span>
-                                </button>
-                            </form>
-
-                            <div class="project-actions">
-                                {% if user.is_superuser or is_editor %}
-                                    <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
-                                {% endif %}
-                                {% if user.is_superuser %}
-                                    {% include "components/certification_delete_modal.html" with cert=cert %}
-                                {% endif %}
-                            </div>
-                        </article>
-                    {% empty %}
-                        <p class="empty-state">
-                            Belum ada sertifikat yang ditambahkan.
-                        </p>
-                    {% endfor %}
+                <!-- Loading -->
+                <div id="loading" class="empty-state hide">
+                    <p>Memuat sertifikat...</p>
                 </div>
+
+                <!-- Error -->
+                <div id="error" class="empty-state hide">
+                    <p>Gagal memuat data sertifikat. Silakan coba lagi.</p>
+                </div>
+
+                <!-- Kosong -->
+                <div id="empty" class="empty-state hide">
+                    <p>Belum ada sertifikat yang ditambahkan atau ditemukan.</p>
+                </div>
+
+                <!-- Tempat kartu, diisi JavaScript -->
+                <div id="grid" class="cert-grid hide"></div>
             </div>
         </section>
     </main>
+
+    {% if user.is_superuser %}
+        {% include "components/certification_form_modal.html" %}
+        {% include "components/certification_delete_modal.html" %}
+    {% endif %}
+
+    <script>
+    // ===== pengaturan awal =====
+    const BASE_CERT_ENDPOINT = "{% url 'main:get_certifications_json' %}";
+    const CREATE_CERT_ENDPOINT = "{% url 'main:create_certification_ajax' %}";
+    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+    const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
+    let certsAbortController;
+    let currentSortOption = "{{ sort_option }}";
+
+    // ===== ambil elemen-elemen HTML =====
+    const loadingState = document.getElementById('loading');
+    const errorState = document.getElementById('error');
+    const emptyState = document.getElementById('empty');
+    const gridContainer = document.getElementById('grid');
+    const searchForm = document.getElementById('certification-search-form');
+    const searchInput = document.getElementById('search-input');
+    const sortTerbaruBtn = document.getElementById('sort-terbaru');
+    const sortStarsBtn = document.getElementById('sort-stars');
+    const certForm = document.getElementById('certification-form');
+
+    // ===== ubah karakter HTML jadi teks biasa (proteksi XSS) =====
+    // & harus paling awal biar hasil ganti yang lain gak keganti lagi
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    // ===== atur bagian mana yang keliatan =====
+    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+        loadingState.classList.toggle('hide', !showLoading);
+        errorState.classList.toggle('hide', !showError);
+        emptyState.classList.toggle('hide', !showEmpty);
+        gridContainer.classList.toggle('hide', !showGrid);
+    }
+
+    // ===== bikin 1 kartu sertifikat dari data JSON =====
+    function buildCertificationCardElement(item) {
+        const cert = item.fields;
+        const certId = item.pk;
+
+        const articleElement = document.createElement('article');
+        articleElement.className = 'cert-card';
+
+        const imageHtml = cert.image
+            ? `<img class="cert-image" src="/static/img/certifications/${escapeHtml(cert.image)}" alt="${escapeHtml(cert.title)}">`
+            : '';
+
+        const credentialHtml = cert.credential_id
+            ? `<p class="cert-credential">Credential ID: ${escapeHtml(cert.credential_id)}</p>`
+            : '';
+
+        const descriptionHtml = cert.description
+            ? `<p class="cert-description">${escapeHtml(cert.description)}</p>`
+            : '';
+
+        // url dari Django pakai id 0 dulu, terus /0/ diganti id asli
+        const starUrl = "{% url 'main:toggle_star' 0 %}".replace('/0/', `/${certId}/`);
+        const editUrl = "{% url 'main:update_certification' 0 %}".replace('/0/', `/${certId}/`);
+
+        const isStarredClass = cert.is_starred ? " is-starred" : "";
+        const starText = cert.is_starred ? "Unstar" : "Star";
+        const starTitle = cert.star_count > 0
+            ? `Starred by ${escapeHtml(cert.starred_by_names)}`
+            : "Be the first to star this";
+
+        // tombol edit buat owner & editor, tombol hapus cuma owner
+        const editHtml = (IS_SUPERUSER || IS_EDITOR)
+            ? `<a href="${editUrl}" class="button">Edit</a>`
+            : '';
+
+        const deleteHtml = IS_SUPERUSER
+            ? `<button type="button" class="button button-danger" data-delete-id="${certId}">Hapus</button>`
+            : '';
+
+        articleElement.innerHTML = `
+            ${imageHtml}
+            <h2>${escapeHtml(cert.title)}</h2>
+            <p class="cert-issuer">${escapeHtml(cert.issuer)}</p>
+            <p class="cert-date">Issued ${escapeHtml(cert.issue_date)}</p>
+            ${credentialHtml}
+            ${descriptionHtml}
+            <form method="post" action="${starUrl}" class="star-form">
+                {% csrf_token %}
+                <button type="submit"
+                        class="button button-star${isStarredClass}"
+                        title="${starTitle}">
+                    <span aria-hidden="true">★</span>
+                    ${starText}
+                    <span class="star-count">${cert.star_count}</span>
+                </button>
+            </form>
+            <div class="project-actions">
+                ${editHtml}
+                ${deleteHtml}
+            </div>
+        `;
+
+        return articleElement;
+    }
+
+    // ===== ambil data sertifikat dari server (AJAX) =====
+    async function fetchCertifications(searchQuery = "") {
+        // kalau request sebelumnya belum kelar, batalin aja
+        if (certsAbortController) certsAbortController.abort();
+        certsAbortController = new AbortController();
+
+        try {
+            displayPageSection({ showLoading: true });
+
+            const params = new URLSearchParams();
+            if (searchQuery) params.set("title", searchQuery);
+            params.set("sort", currentSortOption);
+            const url = `${BASE_CERT_ENDPOINT}?${params.toString()}`;
+
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' },
+                signal: certsAbortController.signal,
+            });
+
+            // fetch gak otomatis error kalau status 4xx/5xx, jadi cek manual
+            if (!response.ok) throw new Error('Failed to fetch data');
+
+            const certData = await response.json();
+
+            if (certData.length === 0) {
+                displayPageSection({ showEmpty: true });
+            } else {
+                gridContainer.innerHTML = '';
+                certData.forEach(item => {
+                    gridContainer.appendChild(buildCertificationCardElement(item));
+                });
+                // pasang aksi klik di tiap tombol hapus
+                gridContainer.querySelectorAll('[data-delete-id]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        openDeleteModal(btn.getAttribute('data-delete-id'));
+                    });
+                });
+                displayPageSection({ showGrid: true });
+            }
+
+            updateSortButtonsUI();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error('Error loading certifications:', error);
+            displayPageSection({ showError: true });
+        }
+    }
+
+    // ===== tombol sort =====
+    function updateSortButtonsUI() {
+        sortTerbaruBtn.classList.toggle('is-active', currentSortOption === 'terbaru');
+        sortStarsBtn.classList.toggle('is-active', currentSortOption === 'stars');
+    }
+
+    sortTerbaruBtn.addEventListener('click', function () {
+        currentSortOption = 'terbaru';
+        fetchCertifications(searchInput.value.trim());
+    });
+
+    sortStarsBtn.addEventListener('click', function () {
+        currentSortOption = 'stars';
+        fetchCertifications(searchInput.value.trim());
+    });
+
+    // ===== search + debounce =====
+    // tunggu 300ms setelah berhenti ngetik baru cari, biar gak request tiap huruf
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    let searchDebounceTimer;
+
+    function searchCertifications() {
+        fetchCertifications(searchInput.value.trim());
+    }
+
+    searchInput.addEventListener("input", function () {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function () {
+            searchCertifications();
+        }, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    searchForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // biar halaman gak reload
+        clearTimeout(searchDebounceTimer);
+        searchCertifications();
+    });
+
+    // ===== baca cookie (buat ambil token CSRF) =====
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // ===== modal tambah sertifikat =====
+    function closeCertificationModal() {
+        document.getElementById("add-certification-modal").hidePopover();
+    }
+
+    async function addCertification(event) {
+        event.preventDefault(); // biar gak reload, kita kirim lewat fetch
+
+        const submitButton = certForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true; // biar gak kekirim 2x kalau diklik berkali-kali
+
+        try {
+            const response = await fetch(CREATE_CERT_ENDPOINT, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(certForm),
+            });
+            // kalau balesan bukan JSON, jadiin objek kosong aja
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                certForm.reset();
+                closeCertificationModal();
+                showToast('Berhasil', 'Sertifikat baru berhasil ditambahkan!', 'success');
+                fetchCertifications(searchInput.value.trim());
+            } else {
+                const errorMessages = result.errors
+                    ? Object.values(result.errors).flat().map(error => error.message)
+                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
+                showToast('Gagal menambahkan sertifikat', errorMessages.join(' '), 'error');
+            }
+        } catch (error) {
+            console.error('Error adding certification:', error);
+            showToast('Gagal menambahkan sertifikat', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    // modal cuma ada buat superuser, jadi dicek dulu biar gak error
+    if (certForm) {
+        certForm.addEventListener('submit', addCertification);
+    }
+
+    // ===== modal hapus sertifikat =====
+    function openDeleteModal(certId) {
+        const form = document.getElementById('delete-certification-form');
+        form.action = "{% url 'main:delete_certification' 0 %}".replace('/0/', `/${certId}/`);
+        document.getElementById('delete-certification-password').value = '';
+        document.getElementById('delete-certification-modal').showPopover();
+    }
+
+    // ===== mulai: langsung ambil data pas halaman dibuka =====
+    updateSortButtonsUI();
+    fetchCertifications(searchInput.value.trim());
+    </script>
 {% endblock content %}

@@ -1,11 +1,13 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, TextInput, Textarea, URLInput, DateInput
+from django.utils.html import strip_tags
 
 from main.models import Certification
 
+
 class CertificationForm(ModelForm):
-    # Field password ini sengaja gak nyambung ke model Certification.
-    # Cuma dipakai buat ngecek di views.py, gak ikut kesimpen ke database.
+    # field password ini gak nyambung ke model, cuma buat dicek di views.py
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={"placeholder": "Masukkan password"}),
         label="Password",
@@ -40,3 +42,22 @@ class CertificationForm(ModelForm):
             "description": Textarea(attrs={"placeholder": "Deskripsi singkat sertifikat (opsional)", "rows": 3}),
             "image": TextInput(attrs={"placeholder": "toefl.jpg"}),
         }
+
+    # Tutorial 5: buang tag HTML dari input teks (proteksi XSS di server)
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        # kalau isinya cuma tag HTML doang, abis dibuang jadi kosong -> tolak
+        if not title:
+            raise ValidationError("Nama sertifikat tidak boleh hanya berisi tag HTML.")
+        return title
+
+    def clean_issuer(self):
+        return strip_tags(self.cleaned_data["issuer"]).strip()
+
+    def clean_credential_id(self):
+        value = self.cleaned_data.get("credential_id") or ""
+        return strip_tags(value).strip()
+
+    def clean_description(self):
+        value = self.cleaned_data.get("description") or ""
+        return strip_tags(value).strip()
