@@ -8,7 +8,7 @@ Website portofolio pribadi milik **Debora Putri Dion Simamora**, dibuat mengguna
 
 ## Deskripsi Proyek
 
-Website ini merupakan portofolio pribadi statis yang dibangun menggunakan **HTML5 dan CSS3**. Website menampilkan profil, cerita singkat tentang diri saya, serta pengalaman organisasi dan volunteering yang pernah saya ikuti.
+Website ini merupakan portofolio pribadi yang dibangun menggunakan **Django**, dan dikembangkan secara bertahap mengikuti tutorial serta tugas mingguan. Awalnya website ini berupa halaman statis dengan HTML5 dan CSS3, kemudian berkembang menggunakan database untuk menyimpan data, form untuk mengelola data, sistem login dengan pembagian peran, hingga JavaScript dan AJAX agar halaman lebih interaktif. Website menampilkan profil, cerita singkat tentang diri saya, pengalaman organisasi dan volunteering, serta sertifikat yang pernah saya terima.
 
 Desain visual website menggunakan gaya editorial yang hangat, dengan gradasi warna lembut, wave divider antar-section, serta perpaduan tipografi serif dan aksen tulisan tangan. Warna utama yang digunakan, yaitu terracotta, navy, dan cream, terinspirasi dari warna pada foto profil saya.
 
@@ -25,6 +25,7 @@ Website memiliki beberapa fitur utama:
 * **Authentication & Authorization:** pengguna dapat membuat akun (Register), login, dan logout menggunakan sistem autentikasi bawaan Django. Status login ditampilkan di navbar, beserta waktu login terakhir yang disimpan lewat cookie. Akses terhadap fitur Create, Update, dan Delete pada Certification dibatasi berdasarkan 4 peran: Visitor (hanya baca), Regular User (baca + star), Editor (baca + star + update), dan Owner/Superuser (akses penuh).
 * **Star Feature:** pengguna yang sudah login dapat memberi atau membatalkan star pada sebuah sertifikat. Jumlah star dan status star pengguna ditampilkan secara real-time, lengkap dengan tooltip yang menunjukkan siapa saja yang sudah memberi star.
 * **Sort Certifications:** pengunjung dapat mengurutkan daftar sertifikat berdasarkan yang terbaru (Newest) atau yang paling banyak di-star (Most Starred).
+* **Web Interactivity (AJAX):** halaman Certifications memuat data lewat `fetch()` dari endpoint JSON, dilengkapi kondisi loading, kosong, dan error (dengan tombol "Coba lagi"), pencarian dengan debouncing, jumlah hasil pencarian, form tambah dan konfirmasi hapus di dalam modal yang dikirim lewat AJAX, notifikasi toast, serta perlindungan terhadap serangan XSS.
 
 Seluruh interaktivitas pada implementasi akhir dibuat tanpa JavaScript. Modal menggunakan teknik CSS `:target`, sedangkan animasi scroll menggunakan `animation-timeline: view()`. Saya juga menggunakan `@supports` sebagai fallback untuk browser yang belum mendukung fitur tersebut.
 
@@ -43,7 +44,7 @@ python manage.py runserver
 5. Buka `http://localhost:8000/` pada browser.
 6. Buat file `.env` di root folder project, isi dengan:
 ```bash
-FORM_PASSWORD=pinibiargabisaasalotakatik715
+FORM_PASSWORD=isi_password_bebas_di_sini
 ```
 File ini **tidak ikut di-push ke GitHub** (sudah masuk `.gitignore`), jadi setiap yang mau menjalankan project ini secara lokal perlu membuat sendiri file `.env` miliknya dengan password bebas.
 7. Untuk mencoba role **Editor**, buat akun baru melalui halaman Register, lalu buka `/admin/`, login sebagai superuser, masuk ke bagian **Groups**, buat/pilih group bernama `Editor`, dan tambahkan akun tersebut ke group itu.
@@ -112,6 +113,20 @@ Ketika memeriksa ulang checklist "API Integrity & Data Security", saya menyadari
 
 Di luar kebutuhan minimum tugas, saya menambahkan dua fitur kreativitas pada halaman Certifications, yaitu tooltip pada tombol star yang menampilkan daftar nama pengguna yang sudah memberi star, dan kontrol sort untuk mengurutkan sertifikat berdasarkan yang terbaru atau yang paling banyak di-star, menggunakan query parameter URL tanpa JavaScript.
 
+### Tutorial 05
+
+Pada Tutorial 05, saya mempelajari JavaScript untuk pertama kalinya di project ini, khususnya AJAX dengan Fetch API, `async`/`await`, serta perlindungan dari serangan XSS. Karena section Projects yang dipakai sebagai contoh di modul sudah saya hapus sejak Individual Assignment 3, saya menerapkan seluruh langkah tutorial pada section Licenses & Certifications yang sudah memiliki fitur autentikasi, role, dan star dari Tutorial 04.
+
+Saya membuat komponen toast (`toast.html` dan `static/js/toast.js`) yang dimasukkan ke `base.html`, lalu mengubah `get_certifications_json` dari `serializers.serialize` menjadi JSON yang dirakit manual dengan `JsonResponse` supaya bisa menyisipkan informasi star milik pengguna yang sedang login, sekaligus mendukung pencarian (`?title=`) dan sort (`?sort=`). Berbeda dengan Individual Assignment 4, daftar username pemberi star kali ini memang perlu ikut dikirim di JSON karena tooltip star sekarang dirender oleh JavaScript, bukan lagi oleh template Django. View `show_certification` juga saya sederhanakan sehingga hanya merender kerangka halaman, sedangkan kartu sertifikat dirakit oleh JavaScript lengkap dengan kondisi loading, kosong, dan error. Selain itu, saya menambahkan debouncing pada pencarian, memindahkan form tambah sertifikat ke dalam modal yang dikirim lewat view baru `create_certification_ajax`, serta menambahkan `escapeHtml` di JavaScript dan `strip_tags` pada method `clean_<field>` di `CertificationForm`.
+
+Setelah perubahan ini, beberapa test lama gagal karena data sertifikat tidak lagi muncul di HTML awal, sehingga saya mengubahnya agar memeriksa endpoint JSON. Saya juga sempat bingung karena satu test tetap gagal padahal sudah saya ganti, dan ternyata method `test_empty_certification_page` tertulis dua kali di dua class berbeda karena salah tempel. Saat mengetes di browser, saya juga menemukan bahwa form di modal tambah sertifikat terpotong di atas dan bawah layar, karena modal tersebut memakai ulang CSS modal hapus dari Tutorial 03 yang dulu isinya pendek dan tidak bisa di-scroll.
+
+### Individual Assignment 5
+
+Karena pola AJAX dari Tutorial 05 sudah langsung saya terapkan pada section Certifications (section yang saya kerjakan di Tugas 3 dan Tugas 4), checklist minimal Individual Assignment 5 sudah terpenuhi dari hasil tutorial. Hak akses dari Tugas 4 tetap berlaku, sehingga pengunjung yang belum login tetap bisa membaca data, sedangkan penambahan data hanya bisa dilakukan oleh Owner dan pengecekannya tetap dilakukan di dalam view.
+
+Di luar kebutuhan minimum tugas, saya menambahkan beberapa fitur supaya semua aksi di halaman Certifications konsisten tanpa reload. Tombol star sekarang dikirim lewat endpoint baru `toggle_star_ajax`, sehingga angka star langsung berubah dan muncul toast, sedangkan pengunjung yang belum login mendapat respons `401` lalu diarahkan ke halaman login. Fitur hapus juga saya ubah menjadi AJAX lewat `delete_certification_ajax`, yang tetap memeriksa role Owner dan `FORM_PASSWORD`. Saya juga menambahkan tombol "Coba lagi" pada kondisi error, tulisan jumlah hasil pencarian di atas kartu, dan membuat tombol sort dari Tugas 4 ikut berjalan lewat AJAX. Terakhir, fungsi `getCookie` dan `escapeHtml` saya pindahkan ke `static/js/utils.js` supaya bisa dipakai ulang di halaman lain, sesuai petunjuk pada soal. View lama `toggle_star` dan `delete_certification` tetap saya pertahankan supaya test dari Tugas 4 tetap berjalan.
+
 ## Pertanyaan Reflektif
 
 ### Tugas 1
@@ -159,6 +174,26 @@ JSON lebih ringkas karena tidak perlu menulis closing tag di setiap elemen seper
 Alurnya, ketika ada request ke endpoint (misalnya `/api/certifications/`), view mengambil data dari database (`Certification.objects.all()`). Data ini masih berbentuk objek Python/Django, bukan teks. Kemudian `serializers.serialize("json", ...)` dipanggil untuk mengubah objek tersebut menjadi teks berformat JSON. Setelah itu, teks JSON tersebut dibungkus menggunakan `HttpResponse` dengan `content_type="application/json"` supaya browser atau aplikasi lain tahu bahwa ini format JSON, lalu dikirim kembali sebagai response.
 
 Serialization perlu dilakukan karena objek Python (seperti instance model Django) strukturnya hanya "dikenali" oleh Python saja, tidak bisa langsung dikirim lewat internet. Data yang dikirim lewat HTTP harus berbentuk teks (string), sehingga objek tersebut perlu "diterjemahkan" dulu menjadi teks JSON yang formatnya universal, supaya bisa dibaca oleh bahasa pemrograman lain juga, tidak hanya Python.
+
+### Tugas 5
+
+1. **Debouncing dan Kenapa Penting untuk Pencarian AJAX**
+
+Debouncing adalah teknik untuk menunda sebuah fungsi sampai pengguna berhenti melakukan aksi selama jeda waktu tertentu. Di portofolio saya, setiap kali pengguna mengetik di kolom pencarian, timer sebelumnya dibatalkan dengan `clearTimeout` lalu dimulai ulang dengan `setTimeout` selama 300 milidetik, sehingga permintaan ke server baru dikirim setelah pengguna benar-benar berhenti mengetik.
+
+Teknik ini penting karena tanpa debouncing, mengetik kata "toefl" saja sudah mengirim lima permintaan berturut-turut ke server, padahal yang dibutuhkan hanya hasil untuk kata terakhir. Dengan debouncing, server tidak dibanjiri permintaan yang tidak perlu, dan kemungkinan hasil pencarian lama muncul belakangan lalu menimpa hasil terbaru juga berkurang.
+
+2. **Fungsi `await` pada `fetch()`**
+
+`fetch()` tidak langsung mengembalikan respons dari server, melainkan sebuah Promise, yaitu semacam janji bahwa hasilnya akan datang nanti. `await` membuat JavaScript menunggu sampai Promise tersebut selesai sebelum lanjut ke baris berikutnya, sehingga variabel `response` benar-benar berisi respons dari server.
+
+Kalau tidak menggunakan `await`, variabel tersebut masih berisi Promise, bukan respons. Akibatnya, pengecekan seperti `response.ok` tidak berjalan dengan benar, `response.json()` akan error, dan kode di bawahnya langsung dijalankan sebelum data sampai, misalnya kartu sertifikat jadi dirender dengan data kosong. Karena `await` hanya bisa dipakai di dalam fungsi `async`, fungsi seperti `fetchCertifications` dan `addCertification` saya tandai sebagai `async`.
+
+3. **Serangan XSS dan Kenapa Data dari AJAX Lebih Rentan**
+
+XSS (Cross-Site Scripting) adalah serangan ketika penyerang menyisipkan kode JavaScript ke dalam data, misalnya judul sertifikat seperti `<img src="x" onerror="alert('XSS!')">`, lalu kode tersebut ikut dijalankan di browser pengguna lain yang membuka halaman itu. Penyerang bisa memanfaatkannya untuk membaca cookie `csrftoken` dan mengirim permintaan atas nama korban.
+
+Data yang ditampilkan lewat template Django lebih aman karena Django otomatis melakukan escaping pada setiap `{{ variabel }}`, misalnya mengubah `<` menjadi `&lt;`, sehingga browser hanya menampilkannya sebagai teks. Sementara itu, ketika data dimasukkan lewat JavaScript menggunakan `innerHTML`, tidak ada lagi escaping otomatis dari Django, sehingga browser akan menganggap tag HTML di dalam data sebagai kode sungguhan. Karena itu, saya membungkus setiap nilai teks dengan `escapeHtml()` sebelum dimasukkan ke `innerHTML`, dan juga membersihkan input di server menggunakan `strip_tags` pada `CertificationForm`.
 
 ## AI Disclosure
 
@@ -375,3 +410,36 @@ Saya memutuskan sendiri untuk berkonsultasi dengan asisten dosen mengenai field 
 ### Keterbatasan AI dan Pemahaman Saya
 
 Sama seperti tutorial-tutorial sebelumnya, Claude tidak dapat menjalankan project atau melihat tampilan browser saya secara langsung, sehingga saya perlu menjelaskan atau mengirimkan pesan error yang saya temukan sendiri untuk ditelusuri bersama. Saya juga menyadari bahwa memahami role-based access control butuh lebih dari sekadar menyalin kode: saya perlu benar-benar menguji sendiri setiap peran satu per satu di browser dengan akun berbeda untuk memastikan logikanya sudah benar. Temuan soal kebocoran data di JSON endpoint juga mengajarkan saya bahwa menambahkan field baru ke model bisa punya efek samping yang tidak terduga pada bagian lain seperti API, sehingga saya perlu memeriksa ulang setiap checklist tugas secara menyeluruh, bukan hanya memastikan fitur utamanya berjalan. Saya juga belajar pentingnya tidak menyimpan secret seperti `FORM_PASSWORD` langsung di dalam kode yang akan di-push ke repository publik, sehingga saya menggunakan `.env` dan `os.getenv()` baik di `views.py` maupun di `tests.py`.
+
+## Update AI Disclosure: Tutorial 05 & Individual Assignment 5
+
+Pada Tutorial 05 dan Individual Assignment 5, saya menggunakan Claude terutama untuk menyesuaikan contoh kode dari modul (yang memakai section Projects) ke section Certifications milik saya, karena strukturnya sudah cukup berbeda dari contoh modul, seperti adanya role Editor, field `FORM_PASSWORD`, dan fitur sort dari tugas sebelumnya. Ini juga pertama kalinya saya menulis JavaScript di project ini, sehingga saya cukup banyak bertanya soal konsep dasarnya.
+
+### Bagian yang Dibantu AI
+
+Claude membantu menyesuaikan kode toast, `get_certifications_json` yang dirakit manual, `create_certification_ajax`, modal tambah dan hapus, debouncing, serta `escapeHtml` dan `strip_tags` ke struktur project saya. Claude juga membantu menjelaskan penyebab test yang gagal setelah perpindahan ke AJAX, memperbaiki modal yang terpotong, serta membantu menulis kode untuk fitur tambahan Individual Assignment 5 seperti star dan hapus tanpa reload, tombol "Coba lagi", jumlah hasil pencarian, dan `utils.js`.
+
+### Bagian yang Saya Kerjakan dan Putuskan Sendiri
+
+Saya memutuskan sendiri untuk menerapkan Tutorial 05 langsung pada section Certifications, karena section Projects sudah saya hapus dan Certifications memang section yang saya kerjakan di Tugas 3 dan Tugas 4. Di awal pengerjaan, beberapa kode yang diberikan sempat tidak cocok dengan kode yang sudah saya punya, misalnya nama class CSS modal yang berbeda dari yang ada di `style.css` saya, sehingga saya meminta panduan ulang yang benar-benar disesuaikan dengan kode terakhir saya di Tugas 4.
+
+Saya sendiri yang menjalankan `python manage.py test` setelah setiap perubahan dan mengirimkan hasilnya ketika ada yang gagal, termasuk saat menemukan test yang tertulis dua kali. Saya juga yang menemukan sendiri bahwa modal tambah sertifikat terpotong saat mengetes di browser, serta menguji semua fitur secara manual, mulai dari pencarian, sort, tambah dan hapus dengan password benar maupun salah, star dengan akun yang belum dan sudah login, sampai tombol "Coba lagi" dengan cara mematikan server saat halaman masih terbuka. Untuk fitur tambahan, saya memilih mengikuti kombinasi fitur yang direkomendasikan dari beberapa opsi yang ditawarkan, karena semuanya masih berkaitan dengan materi JavaScript dan AJAX minggu ini.
+
+### AI Chat / Prompting Log
+
+1. **Menelusuri test yang gagal**
+
+   > "Bantu periksa kesalahan test aku, dengan error seperti berikut ..."
+
+   Dari sini ditemukan bahwa `test_empty_certification_page` tertulis dua kali di dua class berbeda.
+
+2. **Memperbaiki modal yang terpotong**
+
+   > "Kenapa modul ini tetap kaya kepotong?"
+
+   Digunakan sambil mengirim screenshot browser saat judul modal dan tombol submit tidak terlihat.
+
+
+### Keterbatasan AI dan Pemahaman Saya
+
+Pada tutorial ini, saya melihat sendiri bahwa AI bisa memberikan kode yang tidak konsisten kalau tidak tahu kondisi terbaru project saya, sehingga saya perlu memastikan kode yang diberikan memang cocok dengan berkas yang ada di laptop saya sebelum menempelkannya. Claude juga tidak bisa melihat tampilan browser saya, jadi masalah seperti modal yang terpotong baru ketahuan setelah saya mengetesnya sendiri. Saya juga menyadari bahwa pindah dari template Django ke JavaScript membuat perlindungan auto-escaping dari Django hilang, sehingga saya perlu menambahkan escaping secara manual. Karena ini pertama kalinya saya menulis JavaScript, saya masih perlu memperdalam konsep Promise, `async`/`await`, dan event listener supaya bisa menjelaskan dan mengembangkan bagian ini secara mandiri, terutama untuk persiapan Kuis 2.

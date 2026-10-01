@@ -10,6 +10,7 @@ from django.db.models import Count
 from django.http import JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from main.models import Experience, Certification
@@ -131,6 +132,7 @@ def update_certification(request, id):
     return render(request, "certification_form.html", context)
 
 
+# versi lama (pakai reload), tetap disimpen buat cadangan & test Tugas 4
 @login_required(login_url="/login/")
 def delete_certification(request, id):
     if not request.user.is_superuser:
@@ -149,6 +151,30 @@ def delete_certification(request, id):
     return redirect("main:show_certification")
 
 
+# Tugas 5: hapus lewat AJAX, balesnya JSON jadi halaman gak perlu reload
+@require_POST
+def delete_certification_ajax(request, id):
+    # cuma pemilik yang boleh hapus, dicek di sini juga (bukan cuma sembunyiin tombol)
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {"message": "Hanya pemilik portofolio yang dapat menghapus sertifikat."},
+            status=403,
+        )
+
+    certification = get_object_or_404(Certification, pk=id)
+
+    # password tambahan dari Tugas 3 tetap dicek
+    if request.POST.get("password", "") != os.getenv("FORM_PASSWORD"):
+        return JsonResponse(
+            {"message": "Password salah! Sertifikat tidak dihapus."},
+            status=400,
+        )
+
+    certification.delete()
+    return JsonResponse({"message": "Sertifikat berhasil dihapus."}, status=200)
+
+
+# versi lama (pakai reload), tetap disimpen buat cadangan & test Tugas 4
 @login_required(login_url="/login/")
 def toggle_star(request, id):
     certification = get_object_or_404(Certification, pk=id)
@@ -161,6 +187,33 @@ def toggle_star(request, id):
             certification.starred_by.add(request.user)
 
     return redirect("main:show_certification")
+
+
+# Tugas 5: star/unstar lewat AJAX, balesnya JSON jadi halaman gak perlu reload
+@require_POST
+def toggle_star_ajax(request, id):
+    # yang belum login dikasih 401 (bukan redirect), biar JavaScript bisa baca
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"message": "Silakan login dulu untuk memberi star."},
+            status=401,
+        )
+
+    certification = get_object_or_404(Certification, pk=id)
+
+    if certification.starred_by.filter(pk=request.user.pk).exists():
+        certification.starred_by.remove(request.user)
+        is_starred = False
+    else:
+        certification.starred_by.add(request.user)
+        is_starred = True
+
+    starred_users = certification.starred_by.all()
+    return JsonResponse({
+        "is_starred": is_starred,
+        "star_count": starred_users.count(),
+        "starred_by_names": ", ".join([u.username for u in starred_users]),
+    })
 
 
 # Tutorial 5: JSON dirakit manual biar bisa nyelipin info star
@@ -209,6 +262,9 @@ def get_certifications_json(request):
 
 # Tutorial 5: sekarang cuma render kerangka halaman,
 # kartu sertifikatnya diisi JavaScript lewat AJAX
+# ensure_csrf_cookie = pastiin browser dapet cookie csrftoken,
+# soalnya star & hapus sekarang dikirim lewat fetch
+@ensure_csrf_cookie
 def show_certification(request):
     title_query = request.GET.get("title", "").strip()
     sort_option = request.GET.get("sort", "terbaru")

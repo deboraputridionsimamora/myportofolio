@@ -20,8 +20,8 @@
         <h2 id="delete-certification-modal-title">Hapus Sertifikat</h2>
         <p>Masukkan password untuk menghapus sertifikat ini. Aksi ini tidak bisa dibatalkan.</p>
 
-        <!-- action-nya sengaja kosong, nanti diisi JavaScript -->
-        <form id="delete-certification-form" method="post" action="">
+        <!-- dikirim lewat fetch di certification.html, jadi gak perlu action -->
+        <form id="delete-certification-form" method="post">
             {% csrf_token %}
             <div class="form-group">
                 <label for="delete-certification-password">Password</label>

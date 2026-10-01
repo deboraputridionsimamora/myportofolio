@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block meta %}
     <title>Licenses & Certifications - {{ name }}</title>
 {% endblock meta %}
@@ -12,7 +13,7 @@
                         <h1>Licenses &amp; Certifications</h1>
                     </div>
                     {% if user.is_superuser %}
-                        <!-- Tutorial 5: sekarang buka modal, bukan pindah halaman -->
+                        <!-- tombol ini buka modal, bukan pindah halaman -->
                         <button type="button"
                                 class="button project-add-button"
                                 popovertarget="add-certification-modal">
@@ -43,15 +44,19 @@
                     <p>Memuat sertifikat...</p>
                 </div>
 
-                <!-- Error -->
+                <!-- Error, ada tombol buat nyoba ambil data lagi -->
                 <div id="error" class="empty-state hide">
                     <p>Gagal memuat data sertifikat. Silakan coba lagi.</p>
+                    <button type="button" id="retry-button" class="button retry-button">Coba lagi</button>
                 </div>
 
                 <!-- Kosong -->
                 <div id="empty" class="empty-state hide">
                     <p>Belum ada sertifikat yang ditambahkan atau ditemukan.</p>
                 </div>
+
+                <!-- Jumlah hasil, diisi JavaScript -->
+                <p id="result-count" class="result-count hide"></p>
 
                 <!-- Tempat kartu, diisi JavaScript -->
                 <div id="grid" class="cert-grid hide"></div>
@@ -64,10 +69,16 @@
         {% include "components/certification_delete_modal.html" %}
     {% endif %}
 
+    <!-- getCookie & escapeHtml ada di sini -->
+    <script src="{% static 'js/utils.js' %}"></script>
+
     <script>
     // ===== pengaturan awal =====
     const BASE_CERT_ENDPOINT = "{% url 'main:get_certifications_json' %}";
     const CREATE_CERT_ENDPOINT = "{% url 'main:create_certification_ajax' %}";
+    const STAR_AJAX_URL = "{% url 'main:toggle_star_ajax' 0 %}";
+    const DELETE_AJAX_URL = "{% url 'main:delete_certification_ajax' 0 %}";
+    const LOGIN_URL = "{% url 'main:login' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
     let certsAbortController;
@@ -77,30 +88,34 @@
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
     const emptyState = document.getElementById('empty');
+    const resultCount = document.getElementById('result-count');
     const gridContainer = document.getElementById('grid');
+    const retryButton = document.getElementById('retry-button');
     const searchForm = document.getElementById('certification-search-form');
     const searchInput = document.getElementById('search-input');
     const sortTerbaruBtn = document.getElementById('sort-terbaru');
     const sortStarsBtn = document.getElementById('sort-stars');
     const certForm = document.getElementById('certification-form');
-
-    // ===== ubah karakter HTML jadi teks biasa (proteksi XSS) =====
-    // & harus paling awal biar hasil ganti yang lain gak keganti lagi
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
-    }
+    const deleteForm = document.getElementById('delete-certification-form');
 
     // ===== atur bagian mana yang keliatan =====
+    // jumlah hasil cuma muncul barengan sama grid kartu
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
         loadingState.classList.toggle('hide', !showLoading);
         errorState.classList.toggle('hide', !showError);
         emptyState.classList.toggle('hide', !showEmpty);
+        resultCount.classList.toggle('hide', !showGrid);
         gridContainer.classList.toggle('hide', !showGrid);
+    }
+
+    // ===== tulisan jumlah hasil =====
+    // pakai textContent jadi kata kunci dari user aman ditampilin
+    function updateResultCount(total, searchQuery) {
+        if (searchQuery) {
+            resultCount.textContent = `Menampilkan ${total} sertifikat untuk "${searchQuery}"`;
+        } else {
+            resultCount.textContent = `Menampilkan ${total} sertifikat`;
+        }
     }
 
     // ===== bikin 1 kartu sertifikat dari data JSON =====
@@ -124,7 +139,6 @@
             : '';
 
         // url dari Django pakai id 0 dulu, terus /0/ diganti id asli
-        const starUrl = "{% url 'main:toggle_star' 0 %}".replace('/0/', `/${certId}/`);
         const editUrl = "{% url 'main:update_certification' 0 %}".replace('/0/', `/${certId}/`);
 
         const isStarredClass = cert.is_starred ? " is-starred" : "";
@@ -142,6 +156,7 @@
             ? `<button type="button" class="button button-danger" data-delete-id="${certId}">Hapus</button>`
             : '';
 
+        // tombol star dikirim lewat fetch (lihat toggleStar)
         articleElement.innerHTML = `
             ${imageHtml}
             <h2>${escapeHtml(cert.title)}</h2>
@@ -149,16 +164,14 @@
             <p class="cert-date">Issued ${escapeHtml(cert.issue_date)}</p>
             ${credentialHtml}
             ${descriptionHtml}
-            <form method="post" action="${starUrl}" class="star-form">
-                {% csrf_token %}
-                <button type="submit"
-                        class="button button-star${isStarredClass}"
-                        title="${starTitle}">
-                    <span aria-hidden="true">★</span>
-                    ${starText}
-                    <span class="star-count">${cert.star_count}</span>
-                </button>
-            </form>
+            <button type="button"
+                    class="button button-star${isStarredClass}"
+                    title="${starTitle}"
+                    data-star-id="${certId}">
+                <span aria-hidden="true">★</span>
+                <span class="star-text">${starText}</span>
+                <span class="star-count">${cert.star_count}</span>
+            </button>
             <div class="project-actions">
                 ${editHtml}
                 ${deleteHtml}
@@ -199,12 +212,22 @@
                 certData.forEach(item => {
                     gridContainer.appendChild(buildCertificationCardElement(item));
                 });
+
+                // pasang aksi klik di tiap tombol star
+                gridContainer.querySelectorAll('[data-star-id]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        toggleStar(btn);
+                    });
+                });
+
                 // pasang aksi klik di tiap tombol hapus
                 gridContainer.querySelectorAll('[data-delete-id]').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         openDeleteModal(btn.getAttribute('data-delete-id'));
                     });
                 });
+
+                updateResultCount(certData.length, searchQuery);
                 displayPageSection({ showGrid: true });
             }
 
@@ -213,6 +236,57 @@
             if (error.name === 'AbortError') return;
             console.error('Error loading certifications:', error);
             displayPageSection({ showError: true });
+        }
+    }
+
+    // ===== tombol coba lagi di kotak error =====
+    retryButton.addEventListener('click', function () {
+        fetchCertifications(searchInput.value.trim());
+    });
+
+    // ===== star / unstar tanpa reload =====
+    async function toggleStar(button) {
+        const certId = button.getAttribute('data-star-id');
+        button.disabled = true; // biar gak diklik berkali-kali pas lagi loading
+
+        try {
+            const response = await fetch(STAR_AJAX_URL.replace('/0/', `/${certId}/`), {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            });
+            const result = await response.json().catch(() => ({}));
+
+            // belum login -> kasih tau, terus pindahin ke halaman login
+            if (response.status === 401) {
+                showToast('Belum login', result.message || 'Silakan login dulu.', 'error');
+                setTimeout(() => { window.location.href = LOGIN_URL; }, 1500);
+                return;
+            }
+
+            if (!response.ok) {
+                showToast('Gagal memberi star', result.message || `Terjadi kesalahan (status ${response.status}).`, 'error');
+                return;
+            }
+
+            // update tampilan tombol pakai data dari server
+            // pakai textContent & .title biar aman, gak dibaca sebagai HTML
+            button.classList.toggle('is-starred', result.is_starred);
+            button.querySelector('.star-text').textContent = result.is_starred ? 'Unstar' : 'Star';
+            button.querySelector('.star-count').textContent = result.star_count;
+            button.title = result.star_count > 0
+                ? `Starred by ${result.starred_by_names}`
+                : 'Be the first to star this';
+
+            if (result.is_starred) {
+                showToast('Star ditambahkan', 'Makasih udah ngasih star!', 'success');
+            } else {
+                showToast('Star dibatalkan', 'Star kamu udah dihapus.', 'normal');
+            }
+        } catch (error) {
+            console.error('Error toggling star:', error);
+            showToast('Gagal memberi star', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            button.disabled = false;
         }
     }
 
@@ -253,22 +327,6 @@
         clearTimeout(searchDebounceTimer);
         searchCertifications();
     });
-
-    // ===== baca cookie (buat ambil token CSRF) =====
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
 
     // ===== modal tambah sertifikat =====
     function closeCertificationModal() {
@@ -315,11 +373,47 @@
     }
 
     // ===== modal hapus sertifikat =====
+    // id sertifikat yang mau dihapus disimpen di form, biar kebaca pas submit
     function openDeleteModal(certId) {
-        const form = document.getElementById('delete-certification-form');
-        form.action = "{% url 'main:delete_certification' 0 %}".replace('/0/', `/${certId}/`);
+        deleteForm.dataset.certId = certId;
         document.getElementById('delete-certification-password').value = '';
         document.getElementById('delete-certification-modal').showPopover();
+    }
+
+    async function deleteCertification(event) {
+        event.preventDefault(); // biar gak reload
+
+        const certId = deleteForm.dataset.certId;
+        const submitButton = deleteForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        try {
+            const response = await fetch(DELETE_AJAX_URL.replace('/0/', `/${certId}/`), {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(deleteForm), // isinya password
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                document.getElementById('delete-certification-modal').hidePopover();
+                showToast('Berhasil', 'Sertifikat berhasil dihapus!', 'success');
+                fetchCertifications(searchInput.value.trim());
+            } else {
+                // password salah dll -> modal tetap kebuka biar bisa coba lagi
+                showToast('Gagal menghapus sertifikat', result.message || `Terjadi kesalahan (status ${response.status}).`, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting certification:', error);
+            showToast('Gagal menghapus sertifikat', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    // modal hapus juga cuma ada buat superuser
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', deleteCertification);
     }
 
     // ===== mulai: langsung ambil data pas halaman dibuka =====
