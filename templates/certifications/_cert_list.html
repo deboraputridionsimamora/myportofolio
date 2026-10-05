@@ -1,0 +1,16 @@
+<!-- Tutorial 6: potongan daftar sertifikat (jumlah hasil + kartu-kartu) -->
+<!-- dipakai pas halaman pertama kebuka DAN tiap kali search/sort/tambah/hapus -->
+{% if certifications %}
+    <p class="result-count">
+        Menampilkan {{ certifications|length }} sertifikat{% if title_query %} untuk "{{ title_query }}"{% endif %}
+    </p>
+    <div class="cert-grid">
+        {% for cert in certifications %}
+            {% include "certifications/_cert_card.html" %}
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>Belum ada sertifikat yang ditambahkan atau ditemukan.</p>
+    </div>
+{% endif %}

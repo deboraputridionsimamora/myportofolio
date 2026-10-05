@@ -34,10 +34,13 @@
                 aria-label="Tutup form tambah sertifikat">×</button>
 
         <h2 id="add-certification-modal-title">Tambah Sertifikat Baru</h2>
+        <!-- Tutorial 6: dikirim lewat HTMX, error dari server muncul di #add-error -->
         <form id="certification-form"
-              method="post"
-              action="{% url 'main:create_certification_ajax' %}"
-              class="project-form">
+              class="project-form"
+              hx-post="{% url 'main:create_certification_htmx' %}"
+              hx-target="#add-error"
+              hx-swap="innerHTML"
+              hx-disabled-elt="find button[type='submit']">
             {% csrf_token %}
             {% for field in form %}
                 <div class="form-group">
@@ -48,6 +51,7 @@
                     {% endfor %}
                 </div>
             {% endfor %}
+            <p id="add-error" class="form-error" aria-live="polite"></p>
             <div class="project-delete-modal__actions">
                 <button type="button"
                         class="button button-secondary"

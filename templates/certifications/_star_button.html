@@ -1,0 +1,13 @@
+<!-- Tutorial 6: tombol star -->
+<!-- diklik -> POST ke server -> server balikin tombol ini lagi (versi terbaru) -->
+<!-- hx-target gak ditulis, jadi default-nya tombol ini sendiri yang diganti -->
+<button type="button"
+        class="button button-star{% if user in cert.starred_by.all %} is-starred{% endif %}"
+        title="{% if cert.starred_by.all %}Starred by {% for u in cert.starred_by.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}Be the first to star this{% endif %}"
+        hx-post="{% url 'main:toggle_star_htmx' cert.id %}"
+        hx-swap="outerHTML"
+        hx-disabled-elt="this">
+    <span aria-hidden="true">★</span>
+    <span class="star-text">{% if user in cert.starred_by.all %}Unstar{% else %}Star{% endif %}</span>
+    <span class="star-count">{{ cert.starred_by.all|length }}</span>
+</button>

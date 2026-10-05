@@ -1,0 +1,21 @@
+<!-- Tutorial 6: isi modal hapus, diambil lewat hx-get pas tombol Hapus diklik -->
+<!-- jadi url hapusnya udah pas sama id sertifikatnya, gak perlu disimpen pakai JS -->
+<p>Masukkan password untuk menghapus <strong>{{ cert.title }}</strong>. Aksi ini tidak bisa dibatalkan.</p>
+
+<!-- pesan error dari server (misal password salah) ditempel ke #delete-error -->
+<form hx-post="{% url 'main:delete_certification_htmx' cert.id %}"
+      hx-target="#delete-error"
+      hx-swap="innerHTML"
+      hx-disabled-elt="find button[type='submit']">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="delete-certification-password">Password</label>
+        <input type="password" id="delete-certification-password" name="password" required>
+    </div>
+    <p id="delete-error" class="form-error" aria-live="polite"></p>
+    <div class="project-delete-modal__actions">
+        <button type="button" class="button button-secondary"
+                popovertarget="delete-certification-modal" popovertargetaction="hide">Batal</button>
+        <button type="submit" class="button button-danger">Hapus Sertifikat</button>
+    </div>
+</form>

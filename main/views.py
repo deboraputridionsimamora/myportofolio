@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 
 from django.contrib import messages
@@ -7,11 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+from django.utils.html import escape
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
 from main.models import Experience, Certification
 from main.forms import CertificationForm
@@ -260,25 +261,146 @@ def get_certifications_json(request):
     return JsonResponse(data, safe=False)
 
 
-# Tutorial 5: sekarang cuma render kerangka halaman,
-# kartu sertifikatnya diisi JavaScript lewat AJAX
-# ensure_csrf_cookie = pastiin browser dapet cookie csrftoken,
-# soalnya star & hapus sekarang dikirim lewat fetch
-@ensure_csrf_cookie
+# Tutorial 6: halaman sertifikat sekarang pakai HTMX
+# daftar kartu langsung dirender di server (bukan dirakit JavaScript lagi)
 def show_certification(request):
-    title_query = request.GET.get("title", "").strip()
-    sort_option = request.GET.get("sort", "terbaru")
-    if sort_option not in ("terbaru", "stars"):
-        sort_option = "terbaru"
+    title_query, sort_option = get_filter_params(request)
 
     context = {
         "name": "Debora Putri Dion Simamora",
         "title_query": title_query,
         "sort_option": sort_option,
         "is_editor": is_user_editor(request),
+        "certifications": filter_certifications(title_query, sort_option),
         "form": CertificationForm(),  # form kosong buat ditampilin di modal
     }
     return render(request, "certification.html", context)
+
+
+# =====================================================================
+# Tutorial 6: view-view HTMX
+# bedanya sama versi AJAX: balesannya potongan HTML, bukan JSON
+# view AJAX & JSON yang lama sengaja gak dihapus (buat test & cadangan)
+# =====================================================================
+
+# ambil ?title= dan ?sort= dari url, sort yang aneh-aneh dibalikin ke terbaru
+def get_filter_params(request):
+    title_query = request.GET.get("title", "").strip()
+    sort_option = request.GET.get("sort", "terbaru")
+    if sort_option not in ("terbaru", "stars"):
+        sort_option = "terbaru"
+    return title_query, sort_option
+
+
+# query sertifikat sesuai kata kunci & urutan (dipakai halaman utama & HTMX)
+def filter_certifications(title_query, sort_option):
+    certifications = Certification.objects.prefetch_related("starred_by").annotate(
+        star_total=Count("starred_by")
+    )
+
+    if title_query:
+        certifications = certifications.filter(title__icontains=title_query)
+
+    if sort_option == "stars":
+        return certifications.order_by("-star_total", "-issue_date")
+    return certifications.order_by("-issue_date")
+
+
+# pasang header HX-Trigger biar browser nyalain event (misal munculin toast)
+# events contohnya: {"showToast": {...}, "certListChanged": True}
+def add_htmx_events(response, events):
+    response["HX-Trigger"] = json.dumps(events)
+    return response
+
+
+def make_toast(title, message, toast_type="success"):
+    return {"title": title, "message": message, "type": toast_type}
+
+
+# live search + sort: balikin potongan daftar kartu doang
+def certification_list_htmx(request):
+    title_query, sort_option = get_filter_params(request)
+
+    context = {
+        "title_query": title_query,
+        "is_editor": is_user_editor(request),
+        "certifications": filter_certifications(title_query, sort_option),
+    }
+    return render(request, "certifications/_cert_list.html", context)
+
+
+# star / unstar: balikin tombol star yang udah keupdate
+@require_POST
+def toggle_star_htmx(request, id):
+    # belum login -> suruh htmx pindah ke halaman login
+    if not request.user.is_authenticated:
+        response = HttpResponse("")
+        response["HX-Redirect"] = reverse("main:login")
+        return response
+
+    cert = get_object_or_404(Certification, pk=id)
+
+    if cert.starred_by.filter(pk=request.user.pk).exists():
+        cert.starred_by.remove(request.user)
+        toast = make_toast("Star dibatalkan", "Star kamu udah dihapus.", "normal")
+    else:
+        cert.starred_by.add(request.user)
+        toast = make_toast("Star ditambahkan", "Makasih udah ngasih star!")
+
+    response = render(request, "certifications/_star_button.html", {"cert": cert})
+    return add_htmx_events(response, {"showToast": toast})
+
+
+# tambah sertifikat dari modal
+# sukses -> balikin kosong + suruh daftar kartu reload
+# gagal  -> balikin pesan error (status 200 biar htmx mau nempelin ke modal)
+@require_POST
+def create_certification_htmx(request):
+    if not request.user.is_superuser:
+        return HttpResponse("Hanya pemilik portofolio yang dapat menambahkan sertifikat.", status=403)
+
+    form = CertificationForm(request.POST)
+
+    if not form.is_valid():
+        # gabungin semua pesan error jadi satu kalimat
+        error_list = [error for errors in form.errors.values() for error in errors]
+        return HttpResponse(escape(" ".join(error_list)))
+
+    if form.cleaned_data["password"] != os.getenv("FORM_PASSWORD"):
+        return HttpResponse("Password salah! Sertifikat tidak ditambahkan.")
+
+    form.save()
+    response = HttpResponse("")
+    return add_htmx_events(response, {
+        "showToast": make_toast("Berhasil", "Sertifikat baru berhasil ditambahkan!"),
+        "certListChanged": True,
+        "closeModals": True,
+    })
+
+
+# hapus sertifikat
+# GET  -> balikin isi modal (form password) buat sertifikat ini
+# POST -> cek password, terus hapus
+@require_http_methods(["GET", "POST"])
+def delete_certification_htmx(request, id):
+    if not request.user.is_superuser:
+        return HttpResponse("Hanya pemilik portofolio yang dapat menghapus sertifikat.", status=403)
+
+    cert = get_object_or_404(Certification, pk=id)
+
+    if request.method == "GET":
+        return render(request, "certifications/_delete_form.html", {"cert": cert})
+
+    if request.POST.get("password", "") != os.getenv("FORM_PASSWORD"):
+        return HttpResponse("Password salah! Sertifikat tidak dihapus.")
+
+    cert.delete()
+    response = HttpResponse("")
+    return add_htmx_events(response, {
+        "showToast": make_toast("Berhasil", "Sertifikat berhasil dihapus!"),
+        "certListChanged": True,
+        "closeModals": True,
+    })
 
 
 def register(request):

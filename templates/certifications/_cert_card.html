@@ -1,0 +1,41 @@
+<!-- Tutorial 6: satu kartu sertifikat -->
+<!-- dulu kartu ini dirakit pakai JavaScript, sekarang langsung dari template Django -->
+<!-- Django otomatis nge-escape isi variabel, jadi aman dari XSS tanpa escapeHtml() -->
+<article class="cert-card" id="cert-{{ cert.id }}">
+    {% if cert.image %}
+        <img class="cert-image" src="/static/img/certifications/{{ cert.image }}" alt="{{ cert.title }}">
+    {% endif %}
+
+    <h2>{{ cert.title }}</h2>
+    <p class="cert-issuer">{{ cert.issuer }}</p>
+    <p class="cert-date">Issued {{ cert.issue_date|date:"F Y" }}</p>
+
+    {% if cert.credential_id %}
+        <p class="cert-credential">Credential ID: {{ cert.credential_id }}</p>
+    {% endif %}
+
+    {% if cert.description %}
+        <p class="cert-description">{{ cert.description }}</p>
+    {% endif %}
+
+    {% include "certifications/_star_button.html" %}
+
+    <div class="project-actions">
+        <!-- edit buat owner & editor (masih pindah ke halaman form kayak sebelumnya) -->
+        {% if user.is_superuser or is_editor %}
+            <a href="{% url 'main:update_certification' cert.id %}" class="button">Edit</a>
+        {% endif %}
+
+        <!-- hapus cuma owner -->
+        <!-- popovertarget = buka modal, hx-get = sekalian ambil isi form modalnya -->
+        {% if user.is_superuser %}
+            <button type="button"
+                    class="button button-danger"
+                    popovertarget="delete-certification-modal"
+                    hx-get="{% url 'main:delete_certification_htmx' cert.id %}"
+                    hx-target="#delete-modal-body">
+                Hapus
+            </button>
+        {% endif %}
+    </div>
+</article>

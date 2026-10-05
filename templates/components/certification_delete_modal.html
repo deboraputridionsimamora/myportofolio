@@ -18,20 +18,11 @@
                 aria-label="Tutup konfirmasi hapus">×</button>
 
         <h2 id="delete-certification-modal-title">Hapus Sertifikat</h2>
-        <p>Masukkan password untuk menghapus sertifikat ini. Aksi ini tidak bisa dibatalkan.</p>
 
-        <!-- dikirim lewat fetch di certification.html, jadi gak perlu action -->
-        <form id="delete-certification-form" method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="delete-certification-password">Password</label>
-                <input type="password" id="delete-certification-password" name="password" required>
-            </div>
-            <div class="project-delete-modal__actions">
-                <button type="button" class="button button-secondary"
-                        popovertarget="delete-certification-modal" popovertargetaction="hide">Batal</button>
-                <button type="submit" class="button button-danger">Hapus Sertifikat</button>
-            </div>
-        </form>
+        <!-- Tutorial 6: isi modal (form password) diambil dari server lewat hx-get -->
+        <!-- tiap tombol Hapus di kartu naruh form-nya ke sini -->
+        <div id="delete-modal-body">
+            <p>Memuat...</p>
+        </div>
     </div>
 </div>
