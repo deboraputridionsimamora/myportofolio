@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts</title>
+
+  <!-- load htmx dari cdn -->
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"></script>
+
+  <!-- css seadanya biar ga terlalu polos -->
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    input { padding: 6px; margin: 4px 0; }
+    button { padding: 6px 10px; cursor: pointer; }
+    td form { display: inline; }
+
+    /* kotak pesan sukses, warna ijo */
+    #feedback { color: #1a7f37; font-weight: bold; margin-top: 8px; min-height: 1.2em; }
+  </style>
+</head>
+
+<!-- token csrf ditaruh di body biar semua request htmx otomatis bawa token -->
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+  <h1>Tambah Kontak</h1>
+  <!-- pake beforeend, baris baru ditempel di paling bawah tbody -->
+  <!-- abis sukses: form dikosongin + baris "Tidak ada kontak." dihapus kalo ada -->
+  <form hx-post="{% url 'contacts:contact_add' %}"
+        hx-target="#contact-rows"
+        hx-swap="beforeend"
+        hx-on::after-request="if (event.detail.successful) { this.reset(); document.getElementById('empty-row')?.remove(); }">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="Nama" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="tel" name="phone" placeholder="No. HP">
+    <button type="submit">Tambah</button>
+  </form>
+
+  <!-- latihan 3: tempat pesan sukses, awalnya kosong -->
+  <!-- isinya diganti lewat oob swap dari response tambah kontak -->
+  <div id="feedback"></div>
+
+  <h1>Daftar Kontak</h1>
+  <!-- live search: nunggu 300ms setelah berhenti ngetik baru kirim request -->
+  <input type="search" name="q" placeholder="Cari kontak..."
+         hx-get="{% url 'contacts:contact_search' %}"
+         hx-trigger="keyup changed delay:300ms, search"
+         hx-target="#contact-rows"
+         hx-indicator="#search-indicator">
+  <span id="search-indicator" class="htmx-indicator">Mencari...</span>
+
+  <table>
+    <thead>
+      <tr><th>Nama</th><th>Email</th><th>No. HP</th><th>Aksi</th></tr>
+    </thead>
+    <!-- semua hasil htmx bakal ditempel ke sini -->
+    <tbody id="contact-rows">
+      {% include "contacts/_contact_rows.html" %}
+    </tbody>
+  </table>
+
+</body>
+</html>

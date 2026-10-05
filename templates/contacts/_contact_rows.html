@@ -1,0 +1,7 @@
+<!-- looping semua kontak, tiap kontak pake partial satu baris -->
+{% for contact in contacts %}
+  {% include "contacts/_contact_row.html" %}
+{% empty %}
+  <!-- dikasih id biar bisa dihapus pas ada kontak baru masuk -->
+  <tr id="empty-row"><td colspan="4">Tidak ada kontak.</td></tr>
+{% endfor %}

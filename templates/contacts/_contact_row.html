@@ -1,0 +1,23 @@
+<!-- satu baris kontak, id-nya unik biar bisa dicari htmx -->
+<tr id="contact-{{ contact.id }}">
+  <td>{{ contact.name }}</td>
+  <td>{{ contact.email }}</td>
+  <!-- kalo phone kosong, tampilin tanda strip aja -->
+  <td>{{ contact.phone|default:"-" }}</td>
+  <td>
+    <!-- tombol edit: minta versi form dari baris ini -->
+    <button hx-get="{% url 'contacts:contact_edit' contact.id %}"
+            hx-target="closest tr"
+            hx-swap="outerHTML">
+      Edit
+    </button>
+
+    <!-- tombol hapus: kirim DELETE, barisnya diganti kosong -->
+    <button hx-delete="{% url 'contacts:contact_delete' contact.id %}"
+            hx-target="closest tr"
+            hx-swap="outerHTML"
+            hx-confirm="Yakin hapus {{ contact.name }}?">
+      Hapus
+    </button>
+  </td>
+</tr>

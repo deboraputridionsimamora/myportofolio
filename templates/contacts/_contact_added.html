@@ -1,0 +1,14 @@
+<!-- response khusus buat fitur tambah kontak -->
+
+<!-- 1. paket utama: baris baru, bakal masuk ke #contact-rows (beforeend) -->
+{% include "contacts/_contact_row.html" %}
+
+<!-- 2. titipan oob: ganti isi #feedback -->
+<!-- dibungkus template soalnya div ga boleh nempel langsung sama tr -->
+<!-- hx-on::load: begitu pesannya muncul, tunggu 3 detik terus dikosongin lagi -->
+<template>
+  <div id="feedback" hx-swap-oob="true"
+       hx-on::load="setTimeout(() => this.textContent = '', 3000)">
+    Kontak berhasil ditambahkan!
+  </div>
+</template>
