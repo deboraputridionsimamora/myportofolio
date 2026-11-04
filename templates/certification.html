@@ -69,6 +69,10 @@
         {% include "components/certification_delete_modal.html" %}
     {% endif %}
 
+    {% if user.is_superuser or is_editor %}
+        {% include "components/certification_edit_modal.html" %}
+    {% endif %}
+
         <!-- getCookie & escapeHtml ada di sini -->
     <script src="{% static 'js/utils.js' %}"></script>
 
@@ -97,6 +101,11 @@
     const sortStarsBtn = document.getElementById('sort-stars');
     const certForm = document.getElementById('certification-form');
     const deleteForm = document.getElementById('delete-certification-form');
+    const editForm = document.getElementById('edit-certification-form');
+
+    // nyimpen data sertifikat terakhir yang kebuka, biar pas Edit diklik
+    // kita gak perlu fetch ulang satu-satu, tinggal ambil dari sini
+    let certsById = {};
 
     // ===== atur bagian mana yang keliatan =====
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
@@ -151,16 +160,15 @@
             ? `<p class="cert-description">${escapeHtml(cert.description)}</p>`
             : '';
 
-        const editUrl = "{% url 'main:update_certification' 0 %}".replace('/0/', `/${certId}/`);
-
         const isStarredClass = cert.is_starred ? " is-starred" : "";
         const starText = cert.is_starred ? "Unstar" : "Star";
         const starTitle = cert.star_count > 0
             ? `Starred by ${escapeHtml(cert.starred_by_names)}`
             : "Be the first to star this";
 
+        // tombol Edit sekarang buka modal (fetch PATCH ke API), bukan pindah halaman lagi
         const editHtml = (IS_SUPERUSER || IS_EDITOR)
-            ? `<a href="${editUrl}" class="button">Edit</a>`
+            ? `<button type="button" class="button" data-edit-id="${certId}">Edit</button>`
             : '';
 
         const deleteHtml = IS_SUPERUSER
@@ -217,7 +225,9 @@
                 displayPageSection({ showEmpty: true });
             } else {
                 gridContainer.innerHTML = '';
+                certsById = {};
                 certData.forEach(cert => {
+                    certsById[cert.id] = cert;
                     gridContainer.appendChild(buildCertificationCardElement(cert));
                 });
 
@@ -230,6 +240,12 @@
                 gridContainer.querySelectorAll('[data-delete-id]').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         openDeleteModal(btn.getAttribute('data-delete-id'));
+                    });
+                });
+
+                gridContainer.querySelectorAll('[data-edit-id]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        openEditModal(btn.getAttribute('data-edit-id'));
                     });
                 });
 
@@ -411,6 +427,69 @@
 
     if (deleteForm) {
         deleteForm.addEventListener('submit', deleteCertification);
+    }
+
+    // ===== modal edit sertifikat =====
+    // buka modal terus isi field-fieldnya pakai data yang udah kesimpen
+    // di certsById (dari fetch terakhir), jadi gak perlu fetch ulang
+    function openEditModal(certId) {
+        const cert = certsById[certId];
+        if (!cert) return;
+
+        editForm.dataset.certId = certId;
+        document.getElementById('edit-title').value = cert.title;
+        document.getElementById('edit-issuer').value = cert.issuer;
+        document.getElementById('edit-issue_date').value = cert.issue_date;
+        document.getElementById('edit-credential_id').value = cert.credential_id || '';
+        document.getElementById('edit-description').value = cert.description || '';
+        document.getElementById('edit-image').value = cert.image || '';
+        document.getElementById('edit-password').value = '';
+
+        const errorBox = document.getElementById('edit-certification-error');
+        errorBox.classList.add('hide');
+        errorBox.textContent = '';
+
+        document.getElementById('edit-certification-modal').showPopover();
+    }
+
+    async function updateCertification(event) {
+        event.preventDefault();
+
+        const certId = editForm.dataset.certId;
+        const submitButton = editForm.querySelector('button[type="submit"]');
+        const errorBox = document.getElementById('edit-certification-error');
+        submitButton.disabled = true;
+
+        try {
+            // PATCH = cuma kirim perubahan, bukan ganti semua data dari nol
+            const response = await fetch(DETAIL_CERT_ENDPOINT.replace('/0/', `/${certId}/`), {
+                method: 'PATCH',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: new FormData(editForm),
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                document.getElementById('edit-certification-modal').hidePopover();
+                showToast('Berhasil', 'Perubahan sertifikat berhasil disimpan!', 'success');
+                fetchCertifications(searchInput.value.trim());
+            } else {
+                // pesan error ditampilin juga di dalam modal, biar jelas field mana yang salah
+                const message = apiErrorMessage(result);
+                errorBox.textContent = message;
+                errorBox.classList.remove('hide');
+                showToast('Gagal menyimpan perubahan', message, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating certification:', error);
+            showToast('Gagal menyimpan perubahan', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', updateCertification);
     }
 
     // ===== mulai: langsung ambil data pas halaman dibuka =====

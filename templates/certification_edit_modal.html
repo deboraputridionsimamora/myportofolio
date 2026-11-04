@@ -1,0 +1,86 @@
+<style>
+    /* sama kayak modal tambah, biar gak kepotong kalau isinya panjang */
+    #edit-certification-modal {
+        height: 100vh !important;
+        align-items: center !important;
+    }
+
+    #edit-certification-modal .project-delete-modal__content {
+        width: min(100%, 640px) !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+    }
+
+    #edit-certification-modal .form-hint {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div id="edit-certification-modal"
+     class="project-delete-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="edit-certification-modal-title">
+    <!-- klik area gelap di luar kotak = tutup modal -->
+    <button type="button"
+            class="project-delete-modal__backdrop"
+            popovertarget="edit-certification-modal"
+            popovertargetaction="hide"
+            aria-label="Tutup form edit sertifikat"></button>
+
+    <div class="project-delete-modal__content">
+        <button type="button"
+                class="project-delete-modal__close"
+                popovertarget="edit-certification-modal"
+                popovertargetaction="hide"
+                aria-label="Tutup form edit sertifikat">×</button>
+
+        <h2 id="edit-certification-modal-title">Edit Sertifikat</h2>
+
+        <!-- field-fieldnya diisi lewat JavaScript pas tombol Edit diklik,
+             soalnya modal ini cuma 1 tapi dipakai gantian buat semua kartu -->
+        <form id="edit-certification-form" method="post" class="project-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="edit-title">Title</label>
+                <input type="text" id="edit-title" name="title" maxlength="255" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-issuer">Issuer</label>
+                <input type="text" id="edit-issuer" name="issuer" maxlength="255" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-issue_date">Issue date</label>
+                <input type="date" id="edit-issue_date" name="issue_date" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-credential_id">Credential ID</label>
+                <input type="text" id="edit-credential_id" name="credential_id" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="edit-description">Description</label>
+                <textarea id="edit-description" name="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-image">Nama file gambar</label>
+                <input type="text" id="edit-image" name="image" maxlength="255">
+            </div>
+            <div class="form-group">
+                <label for="edit-password">Password</label>
+                <input type="password" id="edit-password" name="password" required>
+                <p class="form-hint">Password yang sama kayak pas Tambah/Hapus sertifikat.</p>
+            </div>
+            <p id="edit-certification-error" class="form-error hide"></p>
+            <div class="project-delete-modal__actions">
+                <button type="button"
+                        class="button button-secondary"
+                        popovertarget="edit-certification-modal"
+                        popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
