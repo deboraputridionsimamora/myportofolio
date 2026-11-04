@@ -69,15 +69,15 @@
         {% include "components/certification_delete_modal.html" %}
     {% endif %}
 
-    <!-- getCookie & escapeHtml ada di sini -->
+        <!-- getCookie & escapeHtml ada di sini -->
     <script src="{% static 'js/utils.js' %}"></script>
 
     <script>
     // ===== pengaturan awal =====
-    const BASE_CERT_ENDPOINT = "{% url 'main:get_certifications_json' %}";
-    const CREATE_CERT_ENDPOINT = "{% url 'main:create_certification_ajax' %}";
-    const STAR_AJAX_URL = "{% url 'main:toggle_star_ajax' 0 %}";
-    const DELETE_AJAX_URL = "{% url 'main:delete_certification_ajax' 0 %}";
+    // sekarang manggil API DRF, bukan lagi endpoint manual Tutorial 5
+    const BASE_CERT_ENDPOINT = "{% url 'api:certification-list' %}";
+    const DETAIL_CERT_ENDPOINT = "{% url 'api:certification-detail' 0 %}";
+    const STAR_CERT_ENDPOINT = "{% url 'api:certification-star' 0 %}";
     const LOGIN_URL = "{% url 'main:login' %}";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
     const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
@@ -99,7 +99,6 @@
     const deleteForm = document.getElementById('delete-certification-form');
 
     // ===== atur bagian mana yang keliatan =====
-    // jumlah hasil cuma muncul barengan sama grid kartu
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
         loadingState.classList.toggle('hide', !showLoading);
         errorState.classList.toggle('hide', !showError);
@@ -108,8 +107,6 @@
         gridContainer.classList.toggle('hide', !showGrid);
     }
 
-    // ===== tulisan jumlah hasil =====
-    // pakai textContent jadi kata kunci dari user aman ditampilin
     function updateResultCount(total, searchQuery) {
         if (searchQuery) {
             resultCount.textContent = `Menampilkan ${total} sertifikat untuk "${searchQuery}"`;
@@ -118,10 +115,26 @@
         }
     }
 
+    // ===== rapiin format tanggal =====
+    // sebelumnya tanggal diformat di server (strftime), sekarang API ngirim
+    // format baku DRF (contoh "2026-01-01"), jadi diformat di browser aja
+    function formatIssueDate(isoDate) {
+        if (!isoDate) return '';
+        const date = new Date(`${isoDate}T00:00:00`);
+        return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    // ===== cari pesan error dari response DRF =====
+    // bentuknya {"title": ["pesan error"], "password": ["pesan error"]}
+    function apiErrorMessage(data) {
+        const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+        return messages.join(' ') || 'Terjadi kesalahan, silakan coba lagi.';
+    }
+
     // ===== bikin 1 kartu sertifikat dari data JSON =====
-    function buildCertificationCardElement(item) {
-        const cert = item.fields;
-        const certId = item.pk;
+    // cert sekarang objek langsung dari serializer, bukan lagi {pk, fields}
+    function buildCertificationCardElement(cert) {
+        const certId = cert.id;
 
         const articleElement = document.createElement('article');
         articleElement.className = 'cert-card';
@@ -138,7 +151,6 @@
             ? `<p class="cert-description">${escapeHtml(cert.description)}</p>`
             : '';
 
-        // url dari Django pakai id 0 dulu, terus /0/ diganti id asli
         const editUrl = "{% url 'main:update_certification' 0 %}".replace('/0/', `/${certId}/`);
 
         const isStarredClass = cert.is_starred ? " is-starred" : "";
@@ -147,7 +159,6 @@
             ? `Starred by ${escapeHtml(cert.starred_by_names)}`
             : "Be the first to star this";
 
-        // tombol edit buat owner & editor, tombol hapus cuma owner
         const editHtml = (IS_SUPERUSER || IS_EDITOR)
             ? `<a href="${editUrl}" class="button">Edit</a>`
             : '';
@@ -156,12 +167,11 @@
             ? `<button type="button" class="button button-danger" data-delete-id="${certId}">Hapus</button>`
             : '';
 
-        // tombol star dikirim lewat fetch (lihat toggleStar)
         articleElement.innerHTML = `
             ${imageHtml}
             <h2>${escapeHtml(cert.title)}</h2>
             <p class="cert-issuer">${escapeHtml(cert.issuer)}</p>
-            <p class="cert-date">Issued ${escapeHtml(cert.issue_date)}</p>
+            <p class="cert-date">Issued ${escapeHtml(formatIssueDate(cert.issue_date))}</p>
             ${credentialHtml}
             ${descriptionHtml}
             <button type="button"
@@ -181,9 +191,8 @@
         return articleElement;
     }
 
-    // ===== ambil data sertifikat dari server (AJAX) =====
+    // ===== ambil data sertifikat dari API DRF =====
     async function fetchCertifications(searchQuery = "") {
-        // kalau request sebelumnya belum kelar, batalin aja
         if (certsAbortController) certsAbortController.abort();
         certsAbortController = new AbortController();
 
@@ -200,7 +209,6 @@
                 signal: certsAbortController.signal,
             });
 
-            // fetch gak otomatis error kalau status 4xx/5xx, jadi cek manual
             if (!response.ok) throw new Error('Failed to fetch data');
 
             const certData = await response.json();
@@ -209,18 +217,16 @@
                 displayPageSection({ showEmpty: true });
             } else {
                 gridContainer.innerHTML = '';
-                certData.forEach(item => {
-                    gridContainer.appendChild(buildCertificationCardElement(item));
+                certData.forEach(cert => {
+                    gridContainer.appendChild(buildCertificationCardElement(cert));
                 });
 
-                // pasang aksi klik di tiap tombol star
                 gridContainer.querySelectorAll('[data-star-id]').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         toggleStar(btn);
                     });
                 });
 
-                // pasang aksi klik di tiap tombol hapus
                 gridContainer.querySelectorAll('[data-delete-id]').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         openDeleteModal(btn.getAttribute('data-delete-id'));
@@ -239,7 +245,6 @@
         }
     }
 
-    // ===== tombol coba lagi di kotak error =====
     retryButton.addEventListener('click', function () {
         fetchCertifications(searchInput.value.trim());
     });
@@ -247,29 +252,28 @@
     // ===== star / unstar tanpa reload =====
     async function toggleStar(button) {
         const certId = button.getAttribute('data-star-id');
-        button.disabled = true; // biar gak diklik berkali-kali pas lagi loading
+        button.disabled = true;
 
         try {
-            const response = await fetch(STAR_AJAX_URL.replace('/0/', `/${certId}/`), {
+            const response = await fetch(STAR_CERT_ENDPOINT.replace('/0/', `/${certId}/`), {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
             });
-            const result = await response.json().catch(() => ({}));
 
-            // belum login -> kasih tau, terus pindahin ke halaman login
-            if (response.status === 401) {
-                showToast('Belum login', result.message || 'Silakan login dulu.', 'error');
+            // DRF balesnya 403 buat yang belum login, bukan 401
+            if (response.status === 403) {
+                showToast('Belum login', 'Silakan login dulu untuk memberi star.', 'error');
                 setTimeout(() => { window.location.href = LOGIN_URL; }, 1500);
                 return;
             }
 
+            const result = await response.json().catch(() => ({}));
+
             if (!response.ok) {
-                showToast('Gagal memberi star', result.message || `Terjadi kesalahan (status ${response.status}).`, 'error');
+                showToast('Gagal memberi star', apiErrorMessage(result), 'error');
                 return;
             }
 
-            // update tampilan tombol pakai data dari server
-            // pakai textContent & .title biar aman, gak dibaca sebagai HTML
             button.classList.toggle('is-starred', result.is_starred);
             button.querySelector('.star-text').textContent = result.is_starred ? 'Unstar' : 'Star';
             button.querySelector('.star-count').textContent = result.star_count;
@@ -307,7 +311,6 @@
     });
 
     // ===== search + debounce =====
-    // tunggu 300ms setelah berhenti ngetik baru cari, biar gak request tiap huruf
     const SEARCH_DEBOUNCE_DELAY = 300;
     let searchDebounceTimer;
 
@@ -323,7 +326,7 @@
     });
 
     searchForm.addEventListener("submit", function (event) {
-        event.preventDefault(); // biar halaman gak reload
+        event.preventDefault();
         clearTimeout(searchDebounceTimer);
         searchCertifications();
     });
@@ -334,18 +337,17 @@
     }
 
     async function addCertification(event) {
-        event.preventDefault(); // biar gak reload, kita kirim lewat fetch
+        event.preventDefault();
 
         const submitButton = certForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true; // biar gak kekirim 2x kalau diklik berkali-kali
+        submitButton.disabled = true;
 
         try {
-            const response = await fetch(CREATE_CERT_ENDPOINT, {
+            const response = await fetch(BASE_CERT_ENDPOINT, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
                 body: new FormData(certForm),
             });
-            // kalau balesan bukan JSON, jadiin objek kosong aja
             const result = await response.json().catch(() => ({}));
 
             if (response.ok) {
@@ -354,10 +356,7 @@
                 showToast('Berhasil', 'Sertifikat baru berhasil ditambahkan!', 'success');
                 fetchCertifications(searchInput.value.trim());
             } else {
-                const errorMessages = result.errors
-                    ? Object.values(result.errors).flat().map(error => error.message)
-                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                showToast('Gagal menambahkan sertifikat', errorMessages.join(' '), 'error');
+                showToast('Gagal menambahkan sertifikat', apiErrorMessage(result), 'error');
             }
         } catch (error) {
             console.error('Error adding certification:', error);
@@ -367,13 +366,11 @@
         }
     }
 
-    // modal cuma ada buat superuser, jadi dicek dulu biar gak error
     if (certForm) {
         certForm.addEventListener('submit', addCertification);
     }
 
     // ===== modal hapus sertifikat =====
-    // id sertifikat yang mau dihapus disimpen di form, biar kebaca pas submit
     function openDeleteModal(certId) {
         deleteForm.dataset.certId = certId;
         document.getElementById('delete-certification-password').value = '';
@@ -381,28 +378,29 @@
     }
 
     async function deleteCertification(event) {
-        event.preventDefault(); // biar gak reload
+        event.preventDefault();
 
         const certId = deleteForm.dataset.certId;
         const submitButton = deleteForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
 
         try {
-            const response = await fetch(DELETE_AJAX_URL.replace('/0/', `/${certId}/`), {
-                method: 'POST',
+            const response = await fetch(DETAIL_CERT_ENDPOINT.replace('/0/', `/${certId}/`), {
+                method: 'DELETE',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
                 body: new FormData(deleteForm), // isinya password
             });
-            const result = await response.json().catch(() => ({}));
 
-            if (response.ok) {
+            // DELETE sukses balesnya 204, body-nya kosong - jangan dibaca .json()
+            if (response.status === 204) {
                 document.getElementById('delete-certification-modal').hidePopover();
                 showToast('Berhasil', 'Sertifikat berhasil dihapus!', 'success');
                 fetchCertifications(searchInput.value.trim());
-            } else {
-                // password salah dll -> modal tetap kebuka biar bisa coba lagi
-                showToast('Gagal menghapus sertifikat', result.message || `Terjadi kesalahan (status ${response.status}).`, 'error');
+                return;
             }
+
+            const result = await response.json().catch(() => ({}));
+            showToast('Gagal menghapus sertifikat', apiErrorMessage(result), 'error');
         } catch (error) {
             console.error('Error deleting certification:', error);
             showToast('Gagal menghapus sertifikat', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
@@ -411,7 +409,6 @@
         }
     }
 
-    // modal hapus juga cuma ada buat superuser
     if (deleteForm) {
         deleteForm.addEventListener('submit', deleteCertification);
     }
