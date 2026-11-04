@@ -479,3 +479,43 @@ Saya sendiri yang menjalankan `python manage.py test` setelah setiap perubahan d
 ### Keterbatasan AI dan Pemahaman Saya
 
 Pada tutorial ini, saya melihat sendiri bahwa AI bisa memberikan kode yang tidak konsisten kalau tidak tahu kondisi terbaru project saya, sehingga saya perlu memastikan kode yang diberikan memang cocok dengan berkas yang ada di laptop saya sebelum menempelkannya. Claude juga tidak bisa melihat tampilan browser saya, jadi masalah seperti modal yang terpotong baru ketahuan setelah saya mengetesnya sendiri. Saya juga menyadari bahwa pindah dari template Django ke JavaScript membuat perlindungan auto-escaping dari Django hilang, sehingga saya perlu menambahkan escaping secara manual. Karena ini pertama kalinya saya menulis JavaScript, saya masih perlu memperdalam konsep Promise, `async`/`await`, dan event listener supaya bisa menjelaskan dan mengembangkan bagian ini secara mandiri, terutama untuk persiapan Kuis 2.
+
+## Update AI Disclosure: Tutorial 06, Tutorial 07 & Individual Assignment 6
+
+Pada Tutorial 06, saya mengerjakan app `contacts` dengan HTMX sebagai latihan terpisah dari section Certifications. Pada Tutorial 07 dan Individual Assignment 6, saya belajar Django REST Framework (DRF) dan menerapkannya pada section Certifications yang sudah saya kembangkan sejak Tugas 2, termasuk menambahkan fitur edit data lewat PATCH dari halaman.
+
+Di tengah pengerjaan, saya sempat ganti laptop, sehingga perlu setup ulang virtual environment, `.env`, dan database lokal dari awal, serta sempat kehilangan data lokal (tapi data di production PWS tetap aman karena tidak bergantung pada database lokal).
+
+### Bagian yang Dibantu AI
+
+Minggu ini saya cukup banyak ngandelin Claude, lebih dari minggu-minggu biasanya. Claude yang nulisin hampir semua kode DRF-nya (`CertificationSerializer`, permission class `IsPortfolioOwnerOrEditorOrReadOnly`, `main/api_views.py`, `main/api_urls.py`, `main/tests_api.py`) disesuaikan dari model `Project` di modul ke model `Certification` saya. Claude juga yang nulisin modal Edit Sertifikat buat Individual Assignment 6 (JavaScript-nya termasuk), dan bener-bener mandu step-by-step pas saya pindah laptop (bikin ulang virtual environment, `.env`, migrasi, superuser) sampai troubleshoot `git push` ke PWS yang sempat gagal login.
+
+Pas bingung soal instruksi Tugas 6 (model mana yang dimaksud "bagian yang kamu kerjain sendiri"), saya juga jujur bilang ke Claude kalau ikutin arahan dari Claude aja dan Claude yang nelusurin ulang chat-chat lama buat mastiin jawabannya bener, bukan saya yang analisis sendiri.
+
+### Bagian yang Saya Kerjakan dan Putuskan Sendiri
+
+Bagian saya minggu ini lebih ke ngetes dan verifikasi: saya yang coba sendiri tiap fitur lewat browser (tambah, edit, star, hapus) pakai akun superuser maupun Editor, buat mastiin beneran jalan, bukan cuma percaya kata Claude. Saat pindah laptop dan data lokal hilang, saya juga yang masukin ulang data sertifikat lewat form di website satu-satu (bukan minta Claude bikinin script), serta yang jalanin `python manage.py test` berkali-kali tiap ada perubahan buat mastiin gak ada yang rusak sebelum commit.
+
+### AI Chat / Prompting Log
+
+1. **Audit ulang semua tutorial & tugas sebelum submit**
+
+   > "coba cek github dll run semua apakah udah benar dann sesuai dan gaada yang error ketika menngerjakan tugas 6 nnti?"
+
+   Dipakai buat minta Claude ngecek ulang dari GitHub: jalanin test, cek struktur file, sampai cek halaman di browser satu-satu, biar yakin semua tutorial dan tugas dari awal sampai Tugas 6 nyambung dan gak ada yang error sebelum disubmit.
+
+2. **Troubleshooting setup di laptop baru**
+
+   > "env\Scripts\activate" (disertai pesan error PowerShell)
+
+   Digunakan untuk membuat ulang virtual environment dan menjalankan project dari laptop baru.
+
+3. **Mastiin ulang sebelum lanjut develop**
+
+   > "ini yakin kan yg certification doang aman?"
+
+   Sebelum lanjut bikin modal Edit Sertifikat buat Individual Assignment 6, saya tanya ulang ke Claude buat mastiin pilihan pakai model `Certification` itu beneran benar, biar gak salah arah dan harus ngulang kerjaan.
+
+### Keterbatasan AI dan Pemahaman Saya
+
+Dari pengalaman pindah laptop, saya belajar bahwa AI tidak bisa mengakses file di komputer saya secara langsung, jadi saya perlu menyalin dan menempel isi file satu per satu (seperti `.env`) berdasarkan arahan Claude. Saya juga belajar pentingnya memverifikasi ulang struktur folder project, karena saat menempelkan file baru (modal edit), saya sempat salah menaruhnya di folder yang salah (`templates/` alih-alih `templates/components/`), yang baru ketahuan setelah saya menjalankan dan mengetes halamannya langsung. Ke depannya saya perlu lebih teliti memperhatikan instruksi lokasi file, tidak hanya menyalin isinya saja.
